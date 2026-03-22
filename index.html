@@ -3,106 +3,99 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Солодкий ринок</title>
+<title>Shop</title>
 
 <style>
+:root {
+  --bg: #eaf6ff;
+  --card: white;
+  --text: #333;
+}
+
+body.dark {
+  --bg: #1e2a36;
+  --card: #2a3a4a;
+  --text: #fff;
+}
+
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: linear-gradient(135deg, #dbefff, #f5fbff);
-  color: #333;
+  font-family: Arial;
+  background: var(--bg);
+  color: var(--text);
 }
 
 /* HEADER */
 header {
-  background: #9fd3ff;
-  padding: 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-/* ADMIN BUTTON */
-#adminBtn {
-  cursor: pointer;
-  font-weight: bold;
-}
-
-/* LOGIN BOX */
-#loginBox {
-  position: fixed;
-  top: 60px;
-  right: 10px;
-  background: white;
-  padding: 15px;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-  width: 220px;
-  display: none;
-}
-
-/* INPUTS */
-input, textarea {
-  width: 100%;
-  padding: 8px;
-  margin: 5px 0;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-}
-
-button {
-  padding: 8px;
-  border: none;
-  background: #7cc6ff;
-  color: white;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-button:hover {
-  background: #5fb5f5;
-}
-
-/* LAYOUT */
-.container {
   padding: 10px;
+  display:flex;
+  justify-content:space-between;
+  background:#9fd3ff;
 }
 
+/* CONTROLS */
+.controls {
+  padding:10px;
+  display:flex;
+  gap:5px;
+  flex-wrap:wrap;
+}
+
+input, select, button {
+  padding:8px;
+  border-radius:8px;
+  border:none;
+}
+
+/* GRID / LIST */
 .grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 12px;
+  display:grid;
+  grid-template-columns: repeat(auto-fill,minmax(180px,1fr));
+  gap:10px;
+  padding:10px;
+}
+
+.list {
+  display:block;
+  padding:10px;
 }
 
 /* CARD */
 .card {
-  background: white;
-  border-radius: 14px;
-  padding: 10px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+  background: var(--card);
+  padding:10px;
+  border-radius:12px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.1);
 }
 
 .card img {
-  width: 100%;
-  height: 120px;
-  object-fit: cover;
-  border-radius: 10px;
+  width:100%;
+  height:120px;
+  object-fit:cover;
+  border-radius:10px;
 }
 
-/* ADMIN PANEL */
-#adminPanel {
-  background: white;
-  padding: 10px;
-  border-radius: 12px;
-  margin-bottom: 10px;
-  display: none;
+/* MODAL IMAGE */
+#modal {
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:black;
+  display:none;
+  justify-content:center;
+  align-items:center;
 }
 
-/* MOBILE */
-@media (max-width: 600px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
+#modal img {
+  max-width:90%;
+  max-height:90%;
+}
+
+/* LOADER */
+#loader {
+  display:none;
 }
 </style>
 </head>
@@ -110,39 +103,47 @@ button:hover {
 <body>
 
 <header>
-  🍬 Солодкий ринок
-  <div id="adminBtn">🔐 Admin</div>
+  <div>🍬 Shop</div>
+  <div>
+    <button onclick="toggleTheme()">🌗</button>
+    <button onclick="logout()">🚪</button>
+  </div>
 </header>
 
-<!-- LOGIN -->
-<div id="loginBox">
-  <input id="login" placeholder="Логін">
-  <input id="password" type="password" placeholder="Пароль">
-  <button onclick="loginAdmin()">Увійти</button>
+<div class="controls">
+  <input id="search" placeholder="Пошук...">
+  <select id="sort">
+    <option value="">Сортування</option>
+    <option value="asc">Ціна ↑</option>
+    <option value="desc">Ціна ↓</option>
+  </select>
+
+  <button onclick="toggleView()">🔘 Grid/List</button>
 </div>
 
-<div class="container">
-
-<!-- ADMIN PANEL -->
-<div id="adminPanel">
-  <h3>Адмін панель</h3>
+<!-- ADMIN -->
+<div id="adminPanel" style="padding:10px; display:none;">
+  <h3>Адмін</h3>
 
   <input id="title" placeholder="Назва">
-  <textarea id="desc" placeholder="Опис"></textarea>
   <input id="price" placeholder="Ціна">
+  <textarea id="desc" placeholder="Опис"></textarea>
 
-  <input id="inst" placeholder="Instagram (необов'язково)">
-  <input id="tg" placeholder="Telegram (необов'язково)">
-  <input id="phone" placeholder="Телефон (необов'язково)">
-  <input id="email" placeholder="Email (необов'язково)">
+  <input type="file" id="images" multiple>
 
-  <input type="file" id="image">
+  <input id="inst" placeholder="Instagram">
+  <input id="tg" placeholder="Telegram">
+  <input id="phone" placeholder="Phone">
+  <input id="email" placeholder="Email">
 
   <button id="addBtn">Додати</button>
+  <div id="loader">⏳ Завантаження...</div>
 </div>
 
 <div id="posts" class="grid"></div>
 
+<div id="modal" onclick="closeModal()">
+  <img id="modalImg">
 </div>
 
 <script type="module">
@@ -153,173 +154,193 @@ import {
   addDoc,
   getDocs,
   deleteDoc,
-  doc
+  doc,
+  updateDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* 🔥 FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "YOUR_KEY",
   authDomain: "YOUR_DOMAIN",
   projectId: "YOUR_ID",
 };
 
-const appFirebase = initializeApp(firebaseConfig);
-const db = getFirestore(appFirebase);
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let posts = [];
+let editId = null;
+let isAdmin = localStorage.getItem("admin")==="true";
+let view = "grid";
 
 /* ELEMENTS */
-const adminBtn = document.getElementById("adminBtn");
-const loginBox = document.getElementById("loginBox");
-const adminPanel = document.getElementById("adminPanel");
 const postsDiv = document.getElementById("posts");
+const loader = document.getElementById("loader");
 
-/* INPUTS */
-const title = document.getElementById("title");
-const desc = document.getElementById("desc");
-const price = document.getElementById("price");
-const image = document.getElementById("image");
-const inst = document.getElementById("inst");
-const tg = document.getElementById("tg");
-const phone = document.getElementById("phone");
-const email = document.getElementById("email");
-
-let isAdmin = false;
-let posts = [];
-
-/* 🔐 CHECK ADMIN SESSION */
-window.onload = () => {
-  if (localStorage.getItem("admin") === "true") {
-    isAdmin = true;
-    adminPanel.style.display = "block";
-  }
-
-  loadPosts();
-};
-
-/* ADMIN BUTTON */
-adminBtn.onclick = () => {
-  loginBox.style.display = loginBox.style.display === "block" ? "none" : "block";
-};
-
-/* LOGIN */
-window.loginAdmin = () => {
-  if (login.value === "admin" && password.value === "1234") {
-    isAdmin = true;
-    localStorage.setItem("admin", "true");
-
-    loginBox.style.display = "none";
-    adminPanel.style.display = "block";
-
-    loadPosts();
-  } else {
-    alert("❌ Невірний логін");
-  }
-};
-
-/* LOAD POSTS */
-async function loadPosts() {
+/* LOAD */
+async function load() {
   const snap = await getDocs(collection(db,"posts"));
   posts = [];
-
-  snap.forEach(d => posts.push({ id: d.id, ...d.data() }));
-
+  snap.forEach(d=>posts.push({id:d.id,...d.data()}));
   render();
 }
 
 /* RENDER */
 function render() {
-  postsDiv.innerHTML = "";
+  postsDiv.className = view;
 
-  posts.forEach(p => {
-    const div = document.createElement("div");
-    div.className = "card";
+  let filtered = [...posts];
 
-    div.innerHTML = `
-      ${p.image ? `<img src="${p.image}">` : ""}
+  const search = document.getElementById("search").value.toLowerCase();
+  if(search){
+    filtered = filtered.filter(p=>p.title.toLowerCase().includes(search));
+  }
+
+  const sort = document.getElementById("sort").value;
+  if(sort==="asc") filtered.sort((a,b)=>a.price-b.price);
+  if(sort==="desc") filtered.sort((a,b)=>b.price-a.price);
+
+  postsDiv.innerHTML="";
+
+  filtered.forEach(p=>{
+    const div=document.createElement("div");
+    div.className="card";
+
+    const img = p.images?.[0] || "";
+
+    div.innerHTML=`
+      ${img?`<img src="${img}" onclick="openModal('${img}')">`:""}
       <h4>${p.title}</h4>
       <p>${p.desc}</p>
       <b>${p.price} грн</b>
 
       <div style="font-size:12px;">
-        ${p.inst ? `📸 ${p.inst}<br>` : ""}
-        ${p.tg ? `✈️ ${p.tg}<br>` : ""}
-        ${p.phone ? `📞 ${p.phone}<br>` : ""}
-        ${p.email ? `✉️ ${p.email}<br>` : ""}
+        ${p.inst||""}<br>
+        ${p.tg||""}<br>
+        ${p.phone||""}<br>
+        ${p.email||""}
       </div>
 
-      ${isAdmin ? `<button onclick="deletePost('${p.id}')">❌</button>` : ""}
+      ${isAdmin?`
+        <button onclick="editPost('${p.id}')">✏️</button>
+        <button onclick="del('${p.id}')">❌</button>
+      `:""}
     `;
 
     postsDiv.appendChild(div);
   });
 }
 
-/* ➕ ADD POST */
-document.getElementById("addBtn").onclick = async () => {
+/* ADD */
+document.getElementById("addBtn").onclick = async ()=>{
+  const files = document.getElementById("images").files;
 
-  if (!title.value || !desc.value || !price.value) {
-    alert("❗ Заповни обов'язкові поля");
+  if(!title.value || !price.value){
+    alert("Заповни поля");
     return;
   }
 
-  const file = image.files[0];
+  loader.style.display="block";
 
-  if (file) {
-    const reader = new FileReader();
+  let images = [];
 
-    reader.onload = async e => {
-      await addDoc(collection(db,"posts"), {
-        title: title.value,
-        desc: desc.value,
-        price: Number(price.value),
-        inst: inst.value || "",
-        tg: tg.value || "",
-        phone: phone.value || "",
-        email: email.value || "",
-        image: e.target.result
-      });
-
-      clearForm();
-      loadPosts();
-    };
-
-    reader.readAsDataURL(file);
-  } else {
-    await addDoc(collection(db,"posts"), {
-      title: title.value,
-      desc: desc.value,
-      price: Number(price.value),
-      inst: inst.value || "",
-      tg: tg.value || "",
-      phone: phone.value || "",
-      email: email.value || "",
-      image: ""
-    });
-
-    clearForm();
-    loadPosts();
+  for(let f of files){
+    const base64 = await toBase64(f);
+    images.push(base64);
   }
+
+  const data = {
+    title:title.value,
+    desc:desc.value,
+    price:Number(price.value),
+    images,
+    inst:inst.value,
+    tg:tg.value,
+    phone:phone.value,
+    email:email.value
+  };
+
+  if(editId){
+    await updateDoc(doc(db,"posts",editId), data);
+    editId=null;
+  } else {
+    await addDoc(collection(db,"posts"), data);
+  }
+
+  loader.style.display="none";
+  clear();
+  load();
 };
 
-/* CLEAR FORM */
-function clearForm() {
-  title.value = "";
-  desc.value = "";
-  price.value = "";
-  inst.value = "";
-  tg.value = "";
-  phone.value = "";
-  email.value = "";
-  image.value = "";
-}
+/* EDIT */
+window.editPost = (id)=>{
+  const p = posts.find(x=>x.id===id);
+
+  title.value=p.title;
+  desc.value=p.desc;
+  price.value=p.price;
+
+  inst.value=p.inst||"";
+  tg.value=p.tg||"";
+  phone.value=p.phone||"";
+  email.value=p.email||"";
+
+  editId=id;
+};
 
 /* DELETE */
-window.deletePost = async (id) => {
-  if (!confirm("Видалити?")) return;
+window.del = async(id)=>{
   await deleteDoc(doc(db,"posts",id));
-  loadPosts();
+  load();
 };
 
-loadPosts();
+/* MODAL */
+window.openModal = (src)=>{
+  modal.style.display="flex";
+  modalImg.src=src;
+};
+
+window.closeModal = ()=>{
+  modal.style.display="none";
+};
+
+/* UTILS */
+function toBase64(file){
+  return new Promise(res=>{
+    const r=new FileReader();
+    r.onload=()=>res(r.result);
+    r.readAsDataURL(file);
+  });
+}
+
+function clear(){
+  title.value="";
+  desc.value="";
+  price.value="";
+}
+
+/* VIEW */
+window.toggleView=()=>{
+  view = view==="grid"?"list":"grid";
+  render();
+};
+
+/* THEME */
+window.toggleTheme=()=>{
+  document.body.classList.toggle("dark");
+};
+
+/* SEARCH + SORT */
+search.oninput=render;
+sort.onchange=render;
+
+/* LOGOUT */
+window.logout=()=>{
+  localStorage.removeItem("admin");
+  location.reload();
+};
+
+/* INIT */
+load();
 </script>
 
 </body>
