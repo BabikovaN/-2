@@ -14,6 +14,7 @@ body {
 
 .hidden { display: none; }
 
+/* AUTH */
 #authScreen {
   height: 100vh;
   display: flex;
@@ -27,6 +28,7 @@ body {
   border-radius: 12px;
   width: 280px;
   text-align: center;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
 }
 
 input, textarea {
@@ -44,11 +46,14 @@ button {
   cursor: pointer;
 }
 
+/* APP */
 #app {
   display: flex;
 }
 
-.main { flex: 1; }
+.main {
+  flex: 1;
+}
 
 header {
   background: #ff6b9a;
@@ -62,6 +67,7 @@ header {
   padding: 15px;
 }
 
+/* POSTS */
 .post {
   background: white;
   padding: 10px;
@@ -78,28 +84,34 @@ header {
   border-radius: 10px;
 }
 
+/* SIDE PANEL */
 .side {
-  width: 180px;
+  width: 200px;
   background: white;
   border-left: 1px solid #ddd;
   padding: 10px;
+}
+
+.side h3 {
+  margin-top: 0;
 }
 </style>
 </head>
 
 <body>
 
-<!-- AUTH -->
-<div id="authScreen" class="hidden">
+<!-- AUTH SCREEN -->
+<div id="authScreen">
   <div class="auth-box">
     <h3>Оберіть роль</h3>
-    <button onclick="enterGuest()">Гість</button>
-    <button onclick="showAdminLogin()">Адмін</button>
+
+    <button onclick="enterGuest()">👤 Гість</button>
+    <button onclick="showAdminLogin()">🔐 Адмін</button>
 
     <div id="adminLogin" class="hidden">
       <input id="login" placeholder="Логін">
       <input id="password" type="password" placeholder="Пароль">
-      <button onclick="loginAdmin()">Вхід</button>
+      <button onclick="loginAdmin()">Увійти</button>
     </div>
   </div>
 </div>
@@ -140,9 +152,16 @@ header {
     </div>
   </div>
 
+  <!-- SIDE PANEL -->
   <div class="side">
     <h3 id="roleTitle"></h3>
     <p id="roleInfo"></p>
+
+    <div id="switchPanel">
+      <p>Змінити роль:</p>
+      <button onclick="enterGuest()">Гість</button>
+      <button onclick="showAdminLogin()">Адмін</button>
+    </div>
   </div>
 
 </div>
@@ -193,8 +212,8 @@ function showAdminLogin() {
 }
 
 function loginAdmin() {
-  const l = login.value;
-  const p = password.value;
+  const l = document.getElementById("login").value;
+  const p = document.getElementById("password").value;
 
   if (l === "Nastuhsa" && p === "Babikovf") {
     isAdmin = true;
@@ -211,8 +230,8 @@ function startApp() {
 
   adminPanel.classList.toggle("hidden", !isAdmin);
 
-  roleTitle.innerText = isAdmin ? "Адмін" : "Гість";
-  roleInfo.innerText = isAdmin ? "Повний доступ" : "Перегляд";
+  roleTitle.innerText = isAdmin ? "Роль: Адмін" : "Роль: Гість";
+  roleInfo.innerText = isAdmin ? "Повний доступ" : "Тільки перегляд";
 
   loadPosts(true);
 }
@@ -270,7 +289,7 @@ function renderPost(p) {
   posts.appendChild(div);
 }
 
-/* ===== ADD POST ===== */
+/* ADD POST */
 async function addPost() {
   const file = image.files[0];
   let imageUrl = "";
