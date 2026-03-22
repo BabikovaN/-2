@@ -3,79 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shop</title>
-
+<title>Sweet Market</title>
 <style>
-:root {
-  --bg: #eaf6ff;
-  --card: white;
-  --text: #333;
-}
-
-body.dark {
-  --bg: #1e2a36;
-  --card: #2a3a4a;
-  --text: #fff;
-}
-
-body {
-  margin: 0;
-  font-family: Arial;
-  background: var(--bg);
-  color: var(--text);
-}
-
-header {
-  padding: 10px;
-  display:flex;
-  justify-content:space-between;
-  background:#9fd3ff;
-  flex-wrap:wrap;
-}
-
-.controls {
-  padding:10px;
-  display:flex;
-  gap:5px;
-  flex-wrap:wrap;
-}
-
-input, select, button, textarea {
-  padding:8px;
-  border-radius:8px;
-  border:none;
-}
-
-.grid {
-  display:grid;
-  grid-template-columns: repeat(auto-fill,minmax(180px,1fr));
-  gap:10px;
-  padding:10px;
-}
-
-.list {
-  display:block;
-  padding:10px;
-}
-
-.card {
-  background: var(--card);
-  padding:10px;
-  border-radius:12px;
-  box-shadow:0 4px 10px rgba(0,0,0,0.1);
-  overflow-wrap: break-word;
-  word-break: break-word;
-}
-
-.card img {
-  width:100%;
-  height:120px;
-  object-fit:cover;
-  border-radius:10px;
-  cursor:pointer;
-}
-
-#modal {
+body{font-family:Arial;margin:0;padding:10px;}
+.card{border:1px solid #ccc;padding:10px;margin:10px;border-radius:10px}
+.card img{width:100%;max-height:200px;object-fit:cover;cursor:pointer}
+#modal{
   position:fixed;
   top:0;
   left:0;
@@ -85,303 +18,197 @@ input, select, button, textarea {
   display:none;
   justify-content:center;
   align-items:center;
+  overflow:hidden;
 }
-
-#modal img {
-  max-width:90%;
-  max-height:90%;
+#modal img{
+  max-width:100%;
+  max-height:100%;
+  transition: transform 0.2s ease;
+  touch-action:none;
 }
-
-#loader {
-  display:none;
-}
+button{margin:5px}
 </style>
 </head>
-
 <body>
 
-<header>
-  <div>🍬 Shop</div>
-  <div>
-    <button id="adminBtn">🔐 Admin</button>
-    <button onclick="toggleTheme()">🌗</button>
-    <button onclick="logout()">🚪</button>
-  </div>
-</header>
+<h2>Sweet Market</h2>
 
-<!-- LOGIN -->
-<div id="loginBox" style="display:none; padding:10px;">
-  <h3>Вхід адміна</h3>
-  <input id="login" placeholder="Логін">
-  <input id="password" type="password" placeholder="Пароль">
-  <button onclick="loginAdmin()">Увійти</button>
-</div>
+<input id="title" placeholder="Назва">
+<input id="price" placeholder="Ціна">
+<input id="desc" placeholder="Опис">
+<input type="file" id="images" multiple>
+<button onclick="addProduct()">Додати</button>
 
-<div class="controls">
-  <input id="search" placeholder="Пошук...">
-  <select id="sort">
-    <option value="">Сортування</option>
-    <option value="asc">Ціна ↑</option>
-    <option value="desc">Ціна ↓</option>
-  </select>
+<div id="list"></div>
 
-  <button onclick="toggleView()">🔘 Grid/List</button>
-</div>
-
-<!-- ADMIN -->
-<div id="adminPanel" style="padding:10px; display:none;">
-  <h3>Адмін</h3>
-
-  <input id="title" placeholder="Назва">
-  <input id="price" placeholder="Ціна">
-  <textarea id="desc" placeholder="Опис"></textarea>
-
-  <input type="file" id="images" multiple>
-
-  <input id="inst" placeholder="Instagram">
-  <input id="tg" placeholder="Telegram">
-  <input id="phone" placeholder="Phone">
-  <input id="email" placeholder="Email">
-
-  <button id="addBtn">Додати</button>
-  <div id="loader">⏳ Завантаження...</div>
-</div>
-
-<div id="posts" class="grid"></div>
-
-<div id="modal" onclick="closeModal()">
+<div id="modal">
+  <button id="prevBtn" style="position:absolute;left:10px;top:50%;font-size:30px;">⬅️</button>
   <img id="modalImg">
+  <button id="nextBtn" style="position:absolute;right:10px;top:50%;font-size:30px;">➡️</button>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  deleteDoc,
-  doc,
-  updateDoc,
-  onSnapshot
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyD5oRMuZ9-HWC2phcBhiURBlUiHvUJTKak",
   authDomain: "sweet-market-9c94e.firebaseapp.com",
-  projectId: "sweet-market-9c94e",
-  storageBucket: "sweet-market-9c94e.firebasestorage.app",
-  messagingSenderId: "583966719717",
-  appId: "1:583966719717:web:f16675f96d95fa83b19e0c"
+  projectId: "sweet-market-9c94e"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let posts = [];
-let editId = null;
-let isAdmin = localStorage.getItem("admin")==="true";
-let view = "grid";
-
-/* ELEMENTS */
-const postsDiv = document.getElementById("posts");
-const loader = document.getElementById("loader");
-const adminPanel = document.getElementById("adminPanel");
-const loginBox = document.getElementById("loginBox");
-
-/* ADMIN BUTTON */
-document.getElementById("adminBtn").onclick = () => {
-  loginBox.style.display = "block";
-};
-
-/* LOGIN */
-window.loginAdmin = () => {
-const l = document.getElementById("login").value;
-const p = document.getElementById("password").value;
-
-  if(l==="admin" && p==="1234"){
-    localStorage.setItem("admin","true");
-    isAdmin = true;
-    adminPanel.style.display="block";
-    loginBox.style.display="none";
-    render();
-  } else {
-    alert("❌ Невірно");
-  }
-};
-
-/* LOGOUT */
-window.logout = () => {
-  localStorage.removeItem("admin");
-  isAdmin = false;
-  adminPanel.style.display="none";
-  render();
-};
-
-/* REALTIME LOAD */
-function load(){
-  onSnapshot(collection(db,"posts"), snap=>{
-    posts = [];
-    snap.forEach(d=>posts.push({id:d.id,...d.data()}));
-    render();
+async function toBase64(file){
+  return new Promise(res=>{
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = e=> img.src = e.target.result;
+    img.onload=()=>{
+      const canvas=document.createElement("canvas");
+      const maxWidth=600;
+      const scale=maxWidth/img.width;
+      canvas.width=maxWidth;
+      canvas.height=img.height*scale;
+      const ctx=canvas.getContext("2d");
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      res(canvas.toDataURL("image/jpeg",0.7));
+    };
+    reader.readAsDataURL(file);
   });
 }
 
-/* RENDER */
-function render(){
-  postsDiv.className = view;
+window.addProduct = async ()=>{
+  const title=document.getElementById("title").value;
+  const price=document.getElementById("price").value;
+  const desc=document.getElementById("desc").value;
+  const files=document.getElementById("images").files;
 
-  let filtered = [...posts];
+  if(files.length===0){alert("Додай фото");return;}
 
-  const search = document.getElementById("search").value.toLowerCase();
-  if(search){
-    filtered = filtered.filter(p=>p.title.toLowerCase().includes(search));
+  let images=[];
+  for(let f of files){
+    images.push(await toBase64(f));
   }
 
-  const sort = document.getElementById("sort").value;
-  if(sort==="asc") filtered.sort((a,b)=>a.price-b.price);
-  if(sort==="desc") filtered.sort((a,b)=>b.price-a.price);
+  await addDoc(collection(db,"posts"),{
+    title,price,desc,images
+  });
+};
 
-  postsDiv.innerHTML="";
+const list=document.getElementById("list");
 
-  filtered.forEach(p=>{
+onSnapshot(collection(db,"posts"),(snap)=>{
+  list.innerHTML="";
+  snap.forEach(doc=>{
+    const p=doc.data();
+    const imgs=p.images||[];
+
     const div=document.createElement("div");
     div.className="card";
 
-    const img = p.images?.[0] || "";
-
     div.innerHTML=`
-      ${img?`<img src="${img}" onclick="openModal('${img}')">`:""}
-      <h4>${p.title}</h4>
+      <h3>${p.title}</h3>
       <p>${p.desc}</p>
-      <b>${p.price} грн</b>
-
-      <div style="font-size:12px;">
-        ${p.inst||""}<br>
-        ${p.tg||""}<br>
-        ${p.phone||""}<br>
-        ${p.email||""}
-      </div>
-
-      ${isAdmin?`
-        <button onclick="editPost('${p.id}')">✏️</button>
-        <button onclick="del('${p.id}')">❌</button>
-      `:""}
+      <p>${p.price}</p>
+      ${imgs.length?`<img src="${imgs[0]}" onclick="openModal(${JSON.stringify(imgs)})">`:""}
     `;
 
-    postsDiv.appendChild(div);
+    list.appendChild(div);
   });
-}
-
-/* ADD */
-document.getElementById("addBtn").onclick = async ()=>{
-
-  const files = document.getElementById("images").files;
-
-  if(!title.value || !price.value){
-    alert("Заповни поля");
-    return;
-  }
-
-  loader.style.display="block";
-
-  let imgs = [];
-
-  for(let f of files){
-    const base64 = await toBase64(f);
-    imgs.push(base64);
-  }
-
-  const data = {
-    title:title.value,
-    desc:desc.value,
-    price:Number(price.value),
-    images:imgs,
-    inst:inst.value,
-    tg:tg.value,
-    phone:phone.value,
-    email:email.value
-  };
-
-  if(editId){
-    await updateDoc(doc(db,"posts",editId), data);
-    editId=null;
-  } else {
-    await addDoc(collection(db,"posts"), data);
-  }
-
-  loader.style.display="none";
-  clear();
-};
-
-/* EDIT */
-window.editPost=(id)=>{
-  const p = posts.find(x=>x.id===id);
-
-  title.value=p.title;
-  desc.value=p.desc;
-  price.value=p.price;
-
-  inst.value=p.inst||"";
-  tg.value=p.tg||"";
-  phone.value=p.phone||"";
-  email.value=p.email||"";
-
-  editId=id;
-};
-
-/* DELETE */
-window.del=async(id)=>{
-  await deleteDoc(doc(db,"posts",id));
-};
+});
 
 /* MODAL */
-window.openModal=(src)=>{
- const modal = document.getElementById("modal");
-const modalImg = document.getElementById("modalImg");
-  modalImg.src=src;
+let currentImages=[];
+let currentIndex=0;
+let scale=1;
+let startDistance=0;
+
+const modal=document.getElementById("modal");
+const modalImg=document.getElementById("modalImg");
+
+window.openModal=(images)=>{
+  currentImages=images;
+  currentIndex=0;
+  scale=1;
+  modal.style.display="flex";
+  modalImg.src=currentImages[0];
 };
 
 window.closeModal=()=>{
   modal.style.display="none";
 };
 
-/* UTILS */
-function toBase64(file){
-  return new Promise(res=>{
-    const r=new FileReader();
-    r.onload=()=>res(r.result);
-    r.readAsDataURL(file);
-  });
-}
-
-function clear(){
-  title.value="";
-  desc.value="";
-  price.value="";
-}
-
-/* VIEW */
-window.toggleView=()=>{
-  view = view==="grid"?"list":"grid";
-  render();
+document.getElementById("prevBtn").onclick=(e)=>{
+  e.stopPropagation();
+  currentIndex=(currentIndex-1+currentImages.length)%currentImages.length;
+  modalImg.src=currentImages[currentIndex];
 };
 
-/* THEME */
-window.toggleTheme=()=>{
-  document.body.classList.toggle("dark");
+document.getElementById("nextBtn").onclick=(e)=>{
+  e.stopPropagation();
+  currentIndex=(currentIndex+1)%currentImages.length;
+  modalImg.src=currentImages[currentIndex];
 };
 
-search.oninput=render;
-sort.onchange=render;
+modal.onclick=()=>closeModal();
 
-/* INIT */
-window.onload=()=>{
-  if(localStorage.getItem("admin")==="true"){
-    isAdmin=true;
-    adminPanel.style.display="block";
+modalImg.onclick=(e)=>{
+  e.stopPropagation();
+  currentIndex=(currentIndex+1)%currentImages.length;
+  modalImg.src=currentImages[currentIndex];
+};
+
+/* SWIPE + ZOOM */
+modal.addEventListener("touchstart",(e)=>{
+  if(e.touches.length===2){
+    startDistance=getDistance(e.touches);
   }
-  load();
-};
-</script>
+});
 
+modal.addEventListener("touchmove",(e)=>{
+  if(e.touches.length===2){
+    let newDist=getDistance(e.touches);
+    scale=newDist/startDistance;
+    modalImg.style.transform=`scale(${scale})`;
+  }
+});
+
+let startX=0;
+modal.addEventListener("touchstart",(e)=>{
+  if(e.touches.length===1){
+    startX=e.touches[0].clientX;
+  }
+});
+
+modal.addEventListener("touchend",(e)=>{
+  if(e.changedTouches.length===1){
+    let diff=startX-e.changedTouches[0].clientX;
+    if(Math.abs(diff)>50){
+      if(diff>0){next();}else{prev();}
+    }
+  }
+});
+
+function next(){
+  currentIndex=(currentIndex+1)%currentImages.length;
+  modalImg.src=currentImages[currentIndex];
+  modalImg.style.transform="scale(1)";
+}
+
+function prev(){
+  currentIndex=(currentIndex-1+currentImages.length)%currentImages.length;
+  modalImg.src=currentImages[currentIndex];
+  modalImg.style.transform="scale(1)";
+}
+
+function getDistance(touches){
+  let dx=touches[0].clientX-touches[1].clientX;
+  let dy=touches[0].clientY-touches[1].clientY;
+  return Math.sqrt(dx*dx+dy*dy);
+}
+
+</script>
 </body>
 </html>
