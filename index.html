@@ -9,7 +9,8 @@
 body {
   margin: 0;
   font-family: Arial;
-  background: #f2f4f8;
+  background: linear-gradient(135deg, #f6d365, #fda085);
+  transition: 0.3s;
 }
 
 .hidden { display: none; }
@@ -50,6 +51,7 @@ header {
   padding: 15px;
   display: flex;
   justify-content: space-between;
+  align-items: center;
 }
 
 .grid {
@@ -69,6 +71,7 @@ header {
   border-radius: 12px;
   display: flex;
   gap: 10px;
+  transition: 0.3s;
 }
 
 .post img {
@@ -90,6 +93,26 @@ header {
   background: white;
   padding: 10px;
   border-left: 1px solid #ddd;
+}
+
+/* 🌙 DARK MODE */
+body.dark {
+  background: #121212;
+  color: white;
+}
+
+body.dark .post {
+  background: #1e1e1e;
+  color: white;
+}
+
+body.dark header {
+  background: #000;
+}
+
+body.dark .auth-box {
+  background: #1e1e1e;
+  color: white;
 }
 </style>
 </head>
@@ -118,8 +141,9 @@ header {
 <header>
   🍬 Солодкий ринок
   <div>
+    <button onclick="toggleTheme()">🌗</button>
+    <button onclick="toggleView()">🔘</button>
     <button onclick="logout()">Вийти</button>
-    <button onclick="toggleView()">🔘 Вид</button>
   </div>
 </header>
 
@@ -143,6 +167,12 @@ header {
   <input id="title" placeholder="Назва">
   <textarea id="desc" placeholder="Опис"></textarea>
   <input id="price" placeholder="Ціна">
+
+  <input id="inst" placeholder="Instagram">
+  <input id="tg" placeholder="Telegram">
+  <input id="phone" placeholder="Телефон">
+  <input id="email" placeholder="Email">
+
   <input type="file" id="image">
 
   <button onclick="addPost()">Додати</button>
@@ -175,7 +205,6 @@ import {
   updateDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* Firebase */
 const firebaseConfig = {
   apiKey: "YOUR_KEY",
   authDomain: "YOUR_DOMAIN",
@@ -195,6 +224,10 @@ const title = document.getElementById("title");
 const desc = document.getElementById("desc");
 const price = document.getElementById("price");
 const image = document.getElementById("image");
+const inst = document.getElementById("inst");
+const tg = document.getElementById("tg");
+const phone = document.getElementById("phone");
+const email = document.getElementById("email");
 
 let isAdmin = false;
 let postsData = [];
@@ -226,10 +259,7 @@ function showAdminLogin() {
 }
 
 function loginAdmin() {
-  const l = login.value;
-  const p = password.value;
-
-  if (l === "admin" && p === "1234") {
+  if (login.value === "admin" && password.value === "1234") {
     isAdmin = true;
     localStorage.setItem("role", "admin");
     startApp();
@@ -295,6 +325,14 @@ function renderPosts() {
         <h3>${p.title}</h3>
         <p>${p.desc}</p>
         <b>${p.price} грн</b>
+
+        <div style="font-size:12px;">
+          ${p.inst ? `📸 ${p.inst}<br>` : ""}
+          ${p.tg ? `✈️ ${p.tg}<br>` : ""}
+          ${p.phone ? `📞 ${p.phone}<br>` : ""}
+          ${p.email ? `✉️ ${p.email}<br>` : ""}
+        </div>
+
         <div>
           ${isAdmin ? `
           <button onclick="editPost('${p.id}')">✏️</button>
@@ -310,48 +348,36 @@ function renderPosts() {
 
 /* ADD */
 window.addPost = async () => {
-  try {
-    if (!title.value || !desc.value || !price.value) {
-      alert("❗ Заповни всі поля");
-      return;
-    }
+  if (!title.value || !desc.value || !price.value) {
+    alert("❗ Заповни всі поля");
+    return;
+  }
 
-    const file = image.files[0];
-    let img = "";
+  const file = image.files[0];
+  let img = "";
 
-    if (file) {
-      const reader = new FileReader();
+  if (file) {
+    const reader = new FileReader();
 
-      reader.onload = async e => {
-        img = e.target.result;
+    reader.onload = async e => {
+      img = e.target.result;
 
-        await addDoc(collection(db,"posts"), {
-          title: title.value,
-          desc: desc.value,
-          price: Number(price.value),
-          image: img
-        });
-
-        alert("✅ Додано!");
-        loadPosts();
-      };
-
-      reader.readAsDataURL(file);
-    } else {
       await addDoc(collection(db,"posts"), {
         title: title.value,
         desc: desc.value,
         price: Number(price.value),
-        image: ""
+        inst: inst.value,
+        tg: tg.value,
+        phone: phone.value,
+        email: email.value,
+        image: img
       });
 
       alert("✅ Додано!");
       loadPosts();
-    }
+    };
 
-  } catch (e) {
-    console.error(e);
-    alert("❌ Помилка");
+    reader.readAsDataURL(file);
   }
 };
 
@@ -385,6 +411,11 @@ window.editPost = async (id) => {
 window.toggleView = () => {
   viewMode = viewMode === "grid" ? "list" : "grid";
   postsDiv.className = viewMode;
+};
+
+/* THEME */
+window.toggleTheme = () => {
+  document.body.classList.toggle("dark");
 };
 
 /* EVENTS */
