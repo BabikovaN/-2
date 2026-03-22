@@ -14,7 +14,6 @@ body {
 
 .hidden { display: none; }
 
-/* AUTH */
 #authScreen {
   height: 100vh;
   display: flex;
@@ -28,7 +27,6 @@ body {
   border-radius: 12px;
   width: 280px;
   text-align: center;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
 }
 
 input, textarea {
@@ -46,14 +44,11 @@ button {
   cursor: pointer;
 }
 
-/* APP */
 #app {
   display: flex;
 }
 
-.main {
-  flex: 1;
-}
+.main { flex: 1; }
 
 header {
   background: #ff6b9a;
@@ -67,7 +62,6 @@ header {
   padding: 15px;
 }
 
-/* POSTS */
 .post {
   background: white;
   padding: 10px;
@@ -84,23 +78,18 @@ header {
   border-radius: 10px;
 }
 
-/* SIDE PANEL */
 .side {
-  width: 200px;
+  width: 180px;
   background: white;
   border-left: 1px solid #ddd;
   padding: 10px;
-}
-
-.side h3 {
-  margin-top: 0;
 }
 </style>
 </head>
 
 <body>
 
-<!-- AUTH SCREEN -->
+<!-- AUTH -->
 <div id="authScreen">
   <div class="auth-box">
     <h3>Оберіть роль</h3>
@@ -127,7 +116,6 @@ header {
 
     <div class="container">
 
-      <!-- ADMIN PANEL -->
       <div id="adminPanel" class="hidden">
         <h3>Адмін панель</h3>
 
@@ -147,45 +135,35 @@ header {
 
       <div id="posts"></div>
 
-      <button onclick="loadMore()">Завантажити ще</button>
-
     </div>
   </div>
 
-  <!-- SIDE PANEL -->
   <div class="side">
     <h3 id="roleTitle"></h3>
     <p id="roleInfo"></p>
 
-    <div id="switchPanel">
-      <p>Змінити роль:</p>
-      <button onclick="enterGuest()">Гість</button>
-      <button onclick="showAdminLogin()">Адмін</button>
-    </div>
+    <button onclick="enterGuest()">Гість</button>
+    <button onclick="showAdminLogin()">Адмін</button>
   </div>
 
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, limit, startAfter } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "YOUR_KEY",
   authDomain: "YOUR_DOMAIN",
   projectId: "YOUR_ID",
-  storageBucket: "YOUR_BUCKET"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const storage = getStorage(app);
 
 let isAdmin = false;
-let lastDoc = null;
 
-/* ===== AUTO LOGIN ===== */
+/* AUTO LOGIN */
 window.onload = () => {
   const role = localStorage.getItem("role");
 
@@ -200,7 +178,7 @@ window.onload = () => {
   }
 };
 
-/* ===== AUTH ===== */
+/* AUTH */
 function enterGuest() {
   isAdmin = false;
   localStorage.setItem("role", "guest");
@@ -220,7 +198,7 @@ function loginAdmin() {
     localStorage.setItem("role", "admin");
     startApp();
   } else {
-    alert("Невірно");
+    alert("❌ Невірний логін");
   }
 }
 
@@ -230,10 +208,10 @@ function startApp() {
 
   adminPanel.classList.toggle("hidden", !isAdmin);
 
-  roleTitle.innerText = isAdmin ? "Роль: Адмін" : "Роль: Гість";
-  roleInfo.innerText = isAdmin ? "Повний доступ" : "Тільки перегляд";
+  roleTitle.innerText = isAdmin ? "Адмін" : "Гість";
+  roleInfo.innerText = isAdmin ? "Повний доступ" : "Перегляд";
 
-  loadPosts(true);
+  loadPosts();
 }
 
 function logout() {
@@ -241,52 +219,28 @@ function logout() {
   location.reload();
 }
 
-/* ===== POSTS ===== */
-async function loadPosts(reset=false) {
-  let q;
+/* POSTS */
+async function loadPosts() {
+  const snap = await getDocs(collection(db, "posts"));
+  posts.innerHTML = "";
 
-  if (reset) {
-    posts.innerHTML = "";
-    lastDoc = null;
-    q = query(collection(db, "posts"), limit(5));
-  } else {
-    if (!lastDoc) return;
-    q = query(collection(db, "posts"), startAfter(lastDoc), limit(5));
-  }
+  snap.forEach(d => {
+    const p = d.data();
 
-  const snap = await getDocs(q);
+    const div = document.createElement("div");
+    div.className = "post";
 
-  if (snap.docs.length > 0) {
-    lastDoc = snap.docs[snap.docs.length - 1];
-  }
-
-  snap.forEach(doc => {
-    renderPost(doc.data());
-  });
-}
-
-function renderPost(p) {
-  const div = document.createElement("div");
-  div.className = "post";
-
-  div.innerHTML = `
-    ${p.image ? `<img loading="lazy" src="${p.image}">` : ""}
-
-    <div>
-      <h3>${p.title}</h3>
-      <p>${p.desc}</p>
-      <b>${p.price} грн</b>
-
+    div.innerHTML = `
+      ${p.image ? `<img src="${p.image}">` : ""}
       <div>
-        ${p.inst ? `<a href="${p.inst}" target="_blank">Instagram</a><br>` : ""}
-        ${p.tg ? `<a href="${p.tg}" target="_blank">Telegram</a><br>` : ""}
-        ${p.phone ? `<p>${p.phone}</p>` : ""}
-        ${p.email ? `<p>${p.email}</p>` : ""}
+        <h3>${p.title}</h3>
+        <p>${p.desc}</p>
+        <b>${p.price} грн</b>
       </div>
-    </div>
-  `;
+    `;
 
-  posts.appendChild(div);
+    posts.appendChild(div);
+  });
 }
 
 /* ADD POST */
@@ -295,28 +249,30 @@ async function addPost() {
   let imageUrl = "";
 
   if (file) {
-    const storageRef = ref(storage, 'images/' + Date.now());
-    await uploadBytes(storageRef, file);
-    imageUrl = await getDownloadURL(storageRef);
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      imageUrl = e.target.result;
+
+      await addDoc(collection(db, "posts"), {
+        title: title.value,
+        desc: desc.value,
+        price: price.value,
+        image: imageUrl
+      });
+
+      loadPosts();
+    };
+    reader.readAsDataURL(file);
+  } else {
+    await addDoc(collection(db, "posts"), {
+      title: title.value,
+      desc: desc.value,
+      price: price.value,
+      image: ""
+    });
+
+    loadPosts();
   }
-
-  await addDoc(collection(db, "posts"), {
-    title: title.value,
-    desc: desc.value,
-    price: price.value,
-    inst: inst.value,
-    tg: tg.value,
-    phone: phone.value,
-    email: email.value,
-    image: imageUrl
-  });
-
-  loadPosts(true);
-}
-
-/* LOAD MORE */
-function loadMore() {
-  loadPosts(false);
 }
 
 /* GLOBAL */
@@ -325,7 +281,6 @@ window.showAdminLogin = showAdminLogin;
 window.loginAdmin = loginAdmin;
 window.logout = logout;
 window.addPost = addPost;
-window.loadMore = loadMore;
 
 </script>
 
