@@ -6,27 +6,97 @@
 <title>Солодкий ринок</title>
 
 <style>
-body { font-family: Arial; background:#f5f5f5; margin:0; }
-header { background:#ff6b9a; color:white; padding:10px; text-align:center; }
-.container { padding:15px; }
-.post { background:white; padding:10px; margin:10px 0; border-radius:10px; }
-img { max-width:150px; display:block; margin-top:5px; }
-button { margin-top:5px; }
-input, textarea { display:block; margin:5px 0; padding:8px; width:100%; }
+body {
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+  background: #f2f4f8;
+}
+
+/* Header */
+header {
+  background: linear-gradient(135deg, #ff6b9a, #ff8fb3);
+  color: white;
+  padding: 15px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: bold;
+}
+
+/* Container */
+.container {
+  padding: 15px;
+  max-width: 900px;
+  margin: auto;
+}
+
+/* Buttons */
+button {
+  background: #ff6b9a;
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+  margin-top: 5px;
+}
+
+button:hover {
+  background: #ff4f86;
+}
+
+/* Inputs */
+input, textarea {
+  width: 100%;
+  padding: 10px;
+  margin: 6px 0;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+/* Cards */
+.post {
+  background: white;
+  padding: 15px;
+  margin: 12px 0;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  transition: 0.2s;
+}
+
+.post:hover {
+  transform: translateY(-4px);
+}
+
+.post img {
+  max-width: 100%;
+  border-radius: 10px;
+  margin-top: 8px;
+}
+
+small {
+  color: gray;
+}
+
+/* Search */
+#search {
+  margin-top: 10px;
+}
 </style>
 </head>
 
 <body>
 
 <header>
-  <h2>🍬 Солодкий ринок</h2>
+  🍬 Солодкий ринок
+  <br>
   <button onclick="switchMode()">Перемкнути режим</button>
 </header>
 
 <div class="container">
 
 <div id="roleSelect">
-  <button onclick="enterGuest()">Увійти як гість</button>
+  <button onclick="enterGuest()">Гість</button>
   <button onclick="showLogin()">Адмін</button>
 </div>
 
@@ -68,13 +138,22 @@ const db = getFirestore(app);
 let isAdmin = false;
 let posts = [];
 
+/* Завантаження */
 async function loadPosts() {
   const snap = await getDocs(collection(db, "posts"));
   posts = [];
-  snap.forEach(d => posts.push({ id: d.id, ...d.data() }));
+
+  snap.forEach(d => {
+    posts.push({ id: d.id, ...d.data() });
+  });
+
+  // 🔥 нові зверху
+  posts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
   renderPosts();
 }
 
+/* Гість */
 function enterGuest() {
   isAdmin = false;
   document.getElementById("loginBox").style.display = "none";
@@ -82,6 +161,7 @@ function enterGuest() {
   loadPosts();
 }
 
+/* Логін */
 function showLogin() {
   document.getElementById("loginBox").style.display = "block";
 }
@@ -100,57 +180,80 @@ function loginAdmin() {
   }
 }
 
+/* Рендер */
 function renderPosts() {
   const container = document.getElementById("posts");
   const search = document.getElementById("search").value.toLowerCase();
 
   container.innerHTML = "";
 
-  posts.filter(p => (p.title || "").toLowerCase().includes(search))
-  .forEach(p => {
-    const div = document.createElement("div");
-    div.className = "post";
+  posts
+    .filter(p => (p.title || "").toLowerCase().includes(search))
+    .forEach(p => {
 
-    div.innerHTML = `
-      <h3>${p.title}</h3>
-      <p>${p.desc || ""}</p>
-      <b>${p.price} грн</b><br>
-      ${p.image ? `<img src="${p.image}">` : ""}
-      ${isAdmin ? `<button onclick="deletePost('${p.id}')">❌ Видалити</button>` : ""}
-    `;
+      const date = p.createdAt ? new Date(p.createdAt).toLocaleString() : "";
 
-    container.appendChild(div);
-  });
+      const div = document.createElement("div");
+      div.className = "post";
+
+      div.innerHTML = `
+        <h3>${p.title}</h3>
+        <p>${p.desc || ""}</p>
+        <b>💰 ${p.price} грн</b><br>
+        <small>🕒 ${date}</small><br>
+        ${p.image ? `<img src="${p.image}">` : ""}
+        ${isAdmin ? `<button onclick="deletePost('${p.id}')">❌ Видалити</button>` : ""}
+      `;
+
+      container.appendChild(div);
+    });
 }
 
+/* Додати */
 async function addPost() {
   const title = document.getElementById("title").value;
   const desc = document.getElementById("desc").value;
   const price = document.getElementById("price").value;
   const file = document.getElementById("image").files[0];
 
+  if (!title || !price) {
+    alert("Заповни назву і ціну");
+    return;
+  }
+
   let image = null;
+
+  const save = async () => {
+    await addDoc(collection(db, "posts"), {
+      title,
+      desc,
+      price,
+      image,
+      createdAt: Date.now()
+    });
+
+    loadPosts();
+  };
 
   if (file) {
     const reader = new FileReader();
-    reader.onload = async (e) => {
+    reader.onload = (e) => {
       image = e.target.result;
-
-      await addDoc(collection(db, "posts"), { title, desc, price, image });
-      loadPosts();
+      save();
     };
     reader.readAsDataURL(file);
   } else {
-    await addDoc(collection(db, "posts"), { title, desc, price, image });
-    loadPosts();
+    save();
   }
 }
 
+/* Видалення */
 async function deletePost(id) {
   await deleteDoc(doc(db, "posts", id));
   loadPosts();
 }
 
+/* глобальні функції */
 window.enterGuest = enterGuest;
 window.showLogin = showLogin;
 window.loginAdmin = loginAdmin;
