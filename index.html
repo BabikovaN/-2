@@ -9,150 +9,139 @@
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background: linear-gradient(135deg, #ffd6c1, #ffb6b9, #ffc3a0);
+  background: linear-gradient(135deg, #dbefff, #f5fbff);
   color: #333;
 }
 
-.hidden { display: none; }
-
-#authScreen {
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.auth-box {
-  background: white;
-  padding: 20px;
-  border-radius: 16px;
-  width: 300px;
-  text-align: center;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-}
-
-input, textarea, select {
-  width: 100%;
-  padding: 10px;
-  margin: 6px 0;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-}
-
-button {
-  padding: 10px;
-  border: none;
-  background: #ff8fab;
-  color: white;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-button:hover {
-  background: #ff6f91;
-}
-
+/* HEADER */
 header {
-  background: rgba(255, 143, 171, 0.9);
-  color: white;
-  padding: 15px;
+  background: #9fd3ff;
+  padding: 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 15px;
-  padding: 10px;
+/* ADMIN BUTTON */
+#adminBtn {
+  cursor: pointer;
+  font-weight: bold;
 }
 
-.post {
+/* LOGIN MODAL */
+#loginBox {
+  position: fixed;
+  top: 60px;
+  right: 10px;
   background: white;
-  padding: 12px;
-  border-radius: 14px;
-  display: flex;
-  gap: 12px;
-  box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  width: 220px;
+  display: none;
 }
 
-.post img {
-  width: 110px;
-  height: 110px;
-  object-fit: cover;
-  border-radius: 10px;
+input, textarea {
+  width: 100%;
+  padding: 8px;
+  margin: 5px 0;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+button {
+  padding: 8px;
+  border: none;
+  background: #7cc6ff;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* LAYOUT */
+.container {
+  padding: 10px;
 }
 
 .controls {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-  padding: 10px;
+  margin-bottom: 10px;
 }
 
-.side {
-  width: 200px;
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+/* CARD */
+.card {
   background: white;
-  padding: 12px;
-  border-left: 1px solid #eee;
+  border-radius: 14px;
+  padding: 10px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+}
+
+.card img {
+  width: 100%;
+  border-radius: 10px;
+  height: 120px;
+  object-fit: cover;
+}
+
+/* ADMIN PANEL */
+#adminPanel {
+  background: white;
+  padding: 10px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  display: none;
+}
+
+/* MOBILE */
+@media (max-width: 600px) {
+  header {
+    flex-direction: row;
+    font-size: 14px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
 </head>
 
 <body>
 
-<!-- AUTH -->
-<div id="authScreen">
-  <div class="auth-box">
-    <h3>Оберіть роль</h3>
-
-    <button onclick="enterGuest()">👤 Гість</button>
-    <button onclick="showAdminLogin()">🔐 Адмін</button>
-
-    <div id="adminLogin" class="hidden">
-      <input id="login" placeholder="Логін">
-      <input id="password" type="password" placeholder="Пароль">
-      <button onclick="loginAdmin()">Увійти</button>
-    </div>
-  </div>
-</div>
-
-<!-- APP -->
-<div id="app" class="hidden">
-
 <header>
   🍬 Солодкий ринок
-  <div>
-    <button onclick="logout()">Вийти</button>
-  </div>
+  <div id="adminBtn">🔐 Admin</div>
 </header>
 
-<div style="display:flex;">
-
-<div style="flex:1;">
-
-<div class="controls">
-  <input id="search" placeholder="🔎 Пошук...">
-
-  <select id="sort">
-    <option value="">Сортування</option>
-    <option value="asc">Ціна ↑</option>
-    <option value="desc">Ціна ↓</option>
-  </select>
+<!-- LOGIN -->
+<div id="loginBox">
+  <input id="login" placeholder="Логін">
+  <input id="password" type="password" placeholder="Пароль">
+  <button onclick="loginAdmin()">Увійти</button>
 </div>
 
-<div id="adminPanel" class="hidden" style="padding:10px;">
+<div class="container">
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel">
   <h3>Адмін панель</h3>
 
   <input id="title" placeholder="Назва">
   <textarea id="desc" placeholder="Опис"></textarea>
   <input id="price" placeholder="Ціна">
 
-  <input id="inst" placeholder="Instagram (необов'язково)">
-  <input id="tg" placeholder="Telegram (необов'язково)">
-  <input id="phone" placeholder="Телефон (необов'язково)">
-  <input id="email" placeholder="Email (необов'язково)">
+  <input id="inst" placeholder="Instagram">
+  <input id="tg" placeholder="Telegram">
+  <input id="phone" placeholder="Телефон">
+  <input id="email" placeholder="Email">
 
   <input type="file" id="image">
 
@@ -163,17 +152,6 @@ header {
 
 </div>
 
-<div class="side">
-  <h3 id="roleTitle"></h3>
-  <p id="roleInfo"></p>
-
-  <button onclick="enterGuest()">Гість</button>
-  <button onclick="showAdminLogin()">Адмін</button>
-</div>
-
-</div>
-</div>
-
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
@@ -182,11 +160,10 @@ import {
   addDoc,
   getDocs,
   deleteDoc,
-  doc,
-  updateDoc
+  doc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* ⚠️ ВСТАВ СВОЇ ДАНІ FIREBASE */
+/* FIREBASE */
 const firebaseConfig = {
   apiKey: "YOUR_KEY",
   authDomain: "YOUR_DOMAIN",
@@ -196,116 +173,72 @@ const firebaseConfig = {
 const appFirebase = initializeApp(firebaseConfig);
 const db = getFirestore(appFirebase);
 
-const authScreen = document.getElementById("authScreen");
-const appDiv = document.getElementById("app");
+let isAdmin = false;
+let posts = [];
+
+/* UI ELEMENTS */
+const adminBtn = document.getElementById("adminBtn");
+const loginBox = document.getElementById("loginBox");
 const adminPanel = document.getElementById("adminPanel");
 const postsDiv = document.getElementById("posts");
 
-let isAdmin = false;
-let postsData = [];
-
-/* AUTH */
-window.onload = () => {
-  const role = localStorage.getItem("role");
-
-  if (role === "admin") {
-    isAdmin = true;
-    startApp();
-  } else if (role === "guest") {
-    isAdmin = false;
-    startApp();
-  } else {
-    authScreen.classList.remove("hidden");
-  }
+/* ADMIN MENU */
+adminBtn.onclick = () => {
+  loginBox.style.display = loginBox.style.display === "block" ? "none" : "block";
 };
 
-function enterGuest() {
-  isAdmin = false;
-  localStorage.setItem("role", "guest");
-  startApp();
-}
-
-function showAdminLogin() {
-  document.getElementById("adminLogin").classList.remove("hidden");
-}
-
-function loginAdmin() {
+/* LOGIN */
+window.loginAdmin = () => {
   if (login.value === "admin" && password.value === "1234") {
     isAdmin = true;
-    localStorage.setItem("role", "admin");
-    startApp();
+    loginBox.style.display = "none";
+    adminPanel.style.display = "block";
+    loadPosts();
   } else {
     alert("❌ Невірний логін");
   }
-}
+};
 
-function startApp() {
-  authScreen.classList.add("hidden");
-  appDiv.classList.remove("hidden");
-
-  adminPanel.classList.toggle("hidden", !isAdmin);
-
-  document.getElementById("roleTitle").innerText = isAdmin ? "Адмін" : "Гість";
-  document.getElementById("roleInfo").innerText = isAdmin ? "Повний доступ" : "Перегляд";
-
-  loadPosts();
-}
-
-function logout() {
-  localStorage.removeItem("role");
-  location.reload();
-}
-
-/* LOAD */
+/* LOAD POSTS */
 async function loadPosts() {
-  const snap = await getDocs(collection(db, "posts"));
-  postsData = [];
+  const snap = await getDocs(collection(db,"posts"));
+  posts = [];
 
-  snap.forEach(d => postsData.push({ id: d.id, ...d.data() }));
-
-  renderPosts();
+  snap.forEach(d => posts.push({ id: d.id, ...d.data() }));
+  render();
 }
 
 /* RENDER */
-function renderPosts() {
+function render() {
   postsDiv.innerHTML = "";
 
-  postsData.forEach(p => {
+  posts.forEach(p => {
     const div = document.createElement("div");
-    div.className = "post";
+    div.className = "card";
 
     div.innerHTML = `
       ${p.image ? `<img src="${p.image}">` : ""}
-      <div>
-        <h3>${p.title}</h3>
-        <p>${p.desc}</p>
-        <b>${p.price} грн</b>
+      <h4>${p.title}</h4>
+      <p>${p.desc}</p>
+      <b>${p.price} грн</b>
 
-        <div style="font-size:12px;">
-          ${p.inst ? `📸 ${p.inst}<br>` : ""}
-          ${p.tg ? `✈️ ${p.tg}<br>` : ""}
-          ${p.phone ? `📞 ${p.phone}<br>` : ""}
-          ${p.email ? `✉️ ${p.email}<br>` : ""}
-        </div>
-
-        ${isAdmin ? `
-        <button onclick="deletePost('${p.id}')">❌</button>
-        ` : ""}
+      <div style="font-size:12px;">
+        ${p.inst ? `📸 ${p.inst}<br>` : ""}
+        ${p.tg ? `✈️ ${p.tg}<br>` : ""}
+        ${p.phone ? `📞 ${p.phone}<br>` : ""}
+        ${p.email ? `✉️ ${p.email}<br>` : ""}
       </div>
+
+      ${isAdmin ? `<button onclick="deletePost('${p.id}')">❌</button>` : ""}
     `;
 
     postsDiv.appendChild(div);
   });
 }
 
-/* ✅ FIXED ADD BUTTON */
+/* ADD */
 document.getElementById("addBtn").onclick = async () => {
   const file = image.files[0];
-  if (!title.value || !desc.value || !price.value) {
-    alert("❗ Заповни обов'язкові поля");
-    return;
-  }
-
   let img = "";
 
   if (file) {
@@ -329,19 +262,6 @@ document.getElementById("addBtn").onclick = async () => {
     };
 
     reader.readAsDataURL(file);
-  } else {
-    await addDoc(collection(db,"posts"), {
-      title: title.value,
-      desc: desc.value,
-      price: Number(price.value),
-      inst: inst.value || "",
-      tg: tg.value || "",
-      phone: phone.value || "",
-      email: email.value || "",
-      image: ""
-    });
-
-    loadPosts();
   }
 };
 
@@ -352,12 +272,7 @@ window.deletePost = async (id) => {
   loadPosts();
 };
 
-/* GLOBAL */
-window.enterGuest = enterGuest;
-window.showAdminLogin = showAdminLogin;
-window.loginAdmin = loginAdmin;
-window.logout = logout;
-
+loadPosts();
 </script>
 
 </body>
