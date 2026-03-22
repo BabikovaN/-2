@@ -8,9 +8,9 @@
 <style>
 body {
   margin: 0;
-  font-family: Arial;
-  background: linear-gradient(135deg, #f6d365, #fda085);
-  transition: 0.3s;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #dfe9f3, #ffffff);
+  color: #333;
 }
 
 .hidden { display: none; }
@@ -23,31 +23,38 @@ body {
 }
 
 .auth-box {
-  background: white;
+  background: #fff;
   padding: 20px;
-  border-radius: 12px;
+  border-radius: 16px;
   width: 300px;
   text-align: center;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
 }
 
 input, textarea, select {
   width: 100%;
-  padding: 8px;
-  margin: 5px 0;
+  padding: 10px;
+  margin: 6px 0;
+  border-radius: 8px;
+  border: 1px solid #ddd;
 }
 
 button {
-  padding: 8px;
+  padding: 10px;
   border: none;
-  background: #ff6b9a;
-  color: white;
-  border-radius: 6px;
+  background: #a8d0e6;
+  color: #1f2d3d;
+  border-radius: 8px;
   cursor: pointer;
 }
 
+button:hover {
+  background: #8fc1d4;
+}
+
 header {
-  background: #ff6b9a;
-  color: white;
+  background: #a8d0e6;
+  color: #1f2d3d;
   padding: 15px;
   display: flex;
   justify-content: space-between;
@@ -57,7 +64,7 @@ header {
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 10px;
+  gap: 15px;
 }
 
 .list {
@@ -66,17 +73,17 @@ header {
 }
 
 .post {
-  background: white;
-  padding: 10px;
-  border-radius: 12px;
+  background: #fff;
+  padding: 12px;
+  border-radius: 14px;
   display: flex;
-  gap: 10px;
-  transition: 0.3s;
+  gap: 12px;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.06);
 }
 
 .post img {
-  width: 120px;
-  height: 120px;
+  width: 110px;
+  height: 110px;
   object-fit: cover;
   border-radius: 10px;
 }
@@ -85,34 +92,47 @@ header {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .side {
   width: 200px;
-  background: white;
-  padding: 10px;
-  border-left: 1px solid #ddd;
+  background: #fff;
+  padding: 12px;
+  border-left: 1px solid #eee;
 }
 
-/* 🌙 DARK MODE */
+/* DARK */
 body.dark {
-  background: #121212;
-  color: white;
+  background: #1e2a38;
+  color: #eaeaea;
 }
 
 body.dark .post {
-  background: #1e1e1e;
-  color: white;
+  background: #2a3b4d;
+  color: #fff;
 }
 
 body.dark header {
-  background: #000;
+  background: #2f4f6f;
+  color: white;
 }
 
 body.dark .auth-box {
-  background: #1e1e1e;
+  background: #2a3b4d;
   color: white;
+}
+
+body.dark input,
+body.dark textarea,
+body.dark select {
+  background: #1e2a38;
+  color: white;
+  border: 1px solid #445;
+}
+
+body.dark button {
+  background: #6fa8dc;
 }
 </style>
 </head>
@@ -214,20 +234,10 @@ const firebaseConfig = {
 const appFirebase = initializeApp(firebaseConfig);
 const db = getFirestore(appFirebase);
 
-/* DOM */
 const authScreen = document.getElementById("authScreen");
 const appDiv = document.getElementById("app");
 const adminPanel = document.getElementById("adminPanel");
 const postsDiv = document.getElementById("posts");
-
-const title = document.getElementById("title");
-const desc = document.getElementById("desc");
-const price = document.getElementById("price");
-const image = document.getElementById("image");
-const inst = document.getElementById("inst");
-const tg = document.getElementById("tg");
-const phone = document.getElementById("phone");
-const email = document.getElementById("email");
 
 let isAdmin = false;
 let postsData = [];
@@ -290,9 +300,7 @@ async function loadPosts() {
   const snap = await getDocs(collection(db, "posts"));
   postsData = [];
 
-  snap.forEach(d => {
-    postsData.push({ id: d.id, ...d.data() });
-  });
+  snap.forEach(d => postsData.push({ id: d.id, ...d.data() }));
 
   renderPosts();
 }
@@ -305,9 +313,7 @@ function renderPosts() {
   const sortVal = document.getElementById("sort").value;
 
   if (searchVal) {
-    data = data.filter(p =>
-      p.title.toLowerCase().includes(searchVal)
-    );
+    data = data.filter(p => p.title.toLowerCase().includes(searchVal));
   }
 
   if (sortVal === "asc") data.sort((a,b)=>a.price-b.price);
@@ -333,12 +339,10 @@ function renderPosts() {
           ${p.email ? `✉️ ${p.email}<br>` : ""}
         </div>
 
-        <div>
-          ${isAdmin ? `
-          <button onclick="editPost('${p.id}')">✏️</button>
-          <button onclick="deletePost('${p.id}')">❌</button>
-          ` : ""}
-        </div>
+        ${isAdmin ? `
+        <button onclick="editPost('${p.id}')">✏️</button>
+        <button onclick="deletePost('${p.id}')">❌</button>
+        ` : ""}
       </div>
     `;
 
@@ -348,17 +352,11 @@ function renderPosts() {
 
 /* ADD */
 window.addPost = async () => {
-  if (!title.value || !desc.value || !price.value) {
-    alert("❗ Заповни всі поля");
-    return;
-  }
-
   const file = image.files[0];
   let img = "";
 
   if (file) {
     const reader = new FileReader();
-
     reader.onload = async e => {
       img = e.target.result;
 
@@ -373,10 +371,8 @@ window.addPost = async () => {
         image: img
       });
 
-      alert("✅ Додано!");
       loadPosts();
     };
-
     reader.readAsDataURL(file);
   }
 };
@@ -396,7 +392,7 @@ window.editPost = async (id) => {
   const d = prompt("Опис", p.desc);
   const pr = prompt("Ціна", p.price);
 
-  if (!t || !pr) return;
+  if (!t) return;
 
   await updateDoc(doc(db,"posts",id), {
     title: t,
@@ -418,7 +414,7 @@ window.toggleTheme = () => {
   document.body.classList.toggle("dark");
 };
 
-/* EVENTS */
+/* SEARCH / SORT */
 document.getElementById("search").oninput = renderPosts;
 document.getElementById("sort").onchange = renderPosts;
 
