@@ -6,139 +6,147 @@
 <title>Солодкий ринок</title>
 
 <style>
-:root {
-  --bg: #f2f4f8;
-  --card: #ffffff;
-  --text: #222;
-  --accent: #ff6b9a;
-}
-
-body.dark {
-  --bg: #121212;
-  --card: #1e1e1e;
-  --text: #f1f1f1;
-}
-
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: var(--bg);
-  color: var(--text);
+  font-family: Arial;
+  background: #f2f4f8;
 }
 
-/* Header */
 header {
-  background: linear-gradient(135deg, #ff6b9a, #ff8fb3);
+  background: #ff6b9a;
   color: white;
   padding: 15px;
   text-align: center;
 }
 
-/* Controls */
-.controls {
+/* Login screen */
+#authScreen {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 10px;
+  height: 100vh;
+  justify-content: center;
+  align-items: center;
 }
 
-/* Inputs */
-input, select {
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-}
-
-/* Layouts */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 15px;
-}
-
-.list {
-  display: block;
-}
-
-/* Card */
-.post {
-  background: var(--card);
+.auth-box {
+  background: white;
+  padding: 20px;
   border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  width: 300px;
+}
+
+input {
+  width: 100%;
+  padding: 8px;
+  margin: 6px 0;
+}
+
+/* Layout */
+.container {
+  padding: 15px;
+  max-width: 1000px;
+  margin: auto;
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+/* Cards */
+.post {
+  background: white;
   padding: 10px;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  border-radius: 12px;
+  margin: 10px 0;
   display: flex;
   gap: 10px;
-}
-
-.grid .post {
-  flex-direction: column;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
 }
 
 .post img {
-  width: 100%;
-  border-radius: 10px;
+  width: 120px;
+  height: 120px;
   object-fit: cover;
+  border-radius: 10px;
 }
 
 .post-content {
   flex: 1;
 }
 
+/* Buttons */
 button {
   padding: 8px 10px;
   border: none;
-  border-radius: 6px;
-  background: var(--accent);
+  background: #ff6b9a;
   color: white;
+  border-radius: 6px;
   cursor: pointer;
 }
 
 button:hover {
   opacity: 0.9;
 }
+
+.admin-panel {
+  background: #fff;
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 15px;
+}
+
+.hidden {
+  display: none;
+}
 </style>
 </head>
 
 <body>
 
+<!-- LOGIN SCREEN -->
+<div id="authScreen">
+  <div class="auth-box">
+    <h3>Вхід</h3>
+    <button onclick="enterGuest()">👤 Гість</button>
+    <button onclick="showAdminLogin()">🔐 Адмін</button>
+
+    <div id="adminLogin" class="hidden">
+      <input id="login" placeholder="Логін">
+      <input id="password" type="password" placeholder="Пароль">
+      <button onclick="loginAdmin()">Увійти</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" class="hidden">
+
 <header>
   🍬 Солодкий ринок
-  <br>
-  <button onclick="toggleTheme()">🌙 / ☀️</button>
+  <button onclick="logout()">Вийти</button>
 </header>
-
-<div class="controls">
-
-<input id="search" placeholder="Пошук..." oninput="renderPosts()">
-
-<select id="sort" onchange="renderPosts()">
-  <option value="">Без сортування</option>
-  <option value="asc">Ціна ↑</option>
-  <option value="desc">Ціна ↓</option>
-</select>
-
-<select id="colorFilter" onchange="renderPosts()">
-  <option value="">Всі кольори</option>
-  <option value="pink">Рожевий</option>
-  <option value="brown">Коричневий</option>
-  <option value="white">Білий</option>
-</select>
-
-<button onclick="setGrid()">🔳 Сітка</button>
-<button onclick="setList()">📄 Рядок</button>
-
-</div>
 
 <div class="container">
 
-<div id="adminPanel">
+<div class="top-bar">
+  <input id="search" placeholder="Пошук..." oninput="renderPosts()">
+  <select id="sort" onchange="renderPosts()">
+    <option value="">Без сортування</option>
+    <option value="asc">Ціна ↑</option>
+    <option value="desc">Ціна ↓</option>
+  </select>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel" class="admin-panel hidden">
   <h3>Адмін панель</h3>
 
   <input id="title" placeholder="Назва">
   <textarea id="desc" placeholder="Опис"></textarea>
   <input id="price" placeholder="Ціна">
-
-  <input id="color" placeholder="Колір (pink, brown, white)">
+  <input id="color" placeholder="Колір">
 
   <input id="inst" placeholder="Instagram">
   <input id="tg" placeholder="Telegram">
@@ -146,17 +154,17 @@ button:hover {
   <input id="email" placeholder="Email">
 
   <input type="file" id="image">
-
   <button onclick="addPost()">➕ Додати</button>
 </div>
 
-<div id="posts" class="grid"></div>
+<div id="posts"></div>
 
+</div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD5oRMuZ9-HWC2phcBhiURBlUiHvUJTKak",
@@ -167,10 +175,48 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+let isAdmin = false;
 let posts = [];
-let layout = "grid";
 
-/* Завантаження */
+/* AUTH UI */
+function enterGuest() {
+  isAdmin = false;
+  openApp();
+}
+
+function showAdminLogin() {
+  document.getElementById("adminLogin").classList.remove("hidden");
+}
+
+function loginAdmin() {
+  const l = document.getElementById("login").value;
+  const p = document.getElementById("password").value;
+
+  if (l === "Nastuhsa" && p === "Babikovf") {
+    isAdmin = true;
+    openApp();
+  } else {
+    alert("Невірно");
+  }
+}
+
+function logout() {
+  location.reload();
+}
+
+/* OPEN APP */
+function openApp() {
+  document.getElementById("authScreen").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+
+  if (isAdmin) {
+    document.getElementById("adminPanel").classList.remove("hidden");
+  }
+
+  loadPosts();
+}
+
+/* LOAD */
 async function loadPosts() {
   const snap = await getDocs(collection(db, "posts"));
   posts = [];
@@ -180,22 +226,18 @@ async function loadPosts() {
   renderPosts();
 }
 
-/* Рендер */
+/* RENDER */
 function renderPosts() {
   const container = document.getElementById("posts");
   const search = document.getElementById("search").value.toLowerCase();
   const sort = document.getElementById("sort").value;
-  const color = document.getElementById("colorFilter").value;
 
   let filtered = posts.filter(p =>
-    (p.title || "").toLowerCase().includes(search) &&
-    (color === "" || p.color === color)
+    (p.title || "").toLowerCase().includes(search)
   );
 
   if (sort === "asc") filtered.sort((a,b)=>a.price-b.price);
   if (sort === "desc") filtered.sort((a,b)=>b.price-a.price);
-
-  container.className = layout;
 
   container.innerHTML = "";
 
@@ -210,14 +252,15 @@ function renderPosts() {
         <h3>${p.title}</h3>
         <p>${p.desc}</p>
         <b>💰 ${p.price} грн</b>
-        <p>🎨 ${p.color || ""}</p>
 
         <div>
-          ${p.inst ? `<a href="${p.inst}" target="_blank">📸 Instagram</a><br>` : ""}
-          ${p.tg ? `<a href="${p.tg}" target="_blank">💬 Telegram</a><br>` : ""}
+          ${p.inst ? `<a href="${p.inst}" target="_blank">Instagram</a><br>` : ""}
+          ${p.tg ? `<a href="${p.tg}" target="_blank">Telegram</a><br>` : ""}
           ${p.phone ? `<p>📞 ${p.phone}</p>` : ""}
           ${p.email ? `<p>📧 ${p.email}</p>` : ""}
         </div>
+
+        ${isAdmin ? `<button onclick="deletePost('${p.id}')">❌ Видалити</button>` : ""}
       </div>
     `;
 
@@ -225,17 +268,11 @@ function renderPosts() {
   });
 }
 
-/* Додати */
+/* ADD */
 async function addPost() {
-  const title = titleInput.value;
-  const desc = descInput.value;
-  const price = Number(priceInput.value);
-  const color = document.getElementById("color").value;
-
-  const inst = document.getElementById("inst").value;
-  const tg = document.getElementById("tg").value;
-  const phone = document.getElementById("phone").value;
-  const email = document.getElementById("email").value;
+  const title = document.getElementById("title").value;
+  const desc = document.getElementById("desc").value;
+  const price = document.getElementById("price").value;
 
   const file = document.getElementById("image").files[0];
 
@@ -246,20 +283,14 @@ async function addPost() {
       title,
       desc,
       price,
-      color,
-      inst,
-      tg,
-      phone,
-      email,
       image
     });
-
     loadPosts();
   };
 
   if (file) {
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = e => {
       image = e.target.result;
       save();
     };
@@ -269,31 +300,21 @@ async function addPost() {
   }
 }
 
-/* Layout */
-function setGrid() {
-  layout = "grid";
-  renderPosts();
+/* DELETE */
+async function deletePost(id) {
+  await deleteDoc(doc(db, "posts", id));
+  loadPosts();
 }
 
-function setList() {
-  layout = "list";
-  renderPosts();
-}
-
-/* Тема */
-function toggleTheme() {
-  document.body.classList.toggle("dark");
-}
-
-/* Init */
-loadPosts();
-
-/* global */
+/* GLOBAL */
+window.enterGuest = enterGuest;
+window.showAdminLogin = showAdminLogin;
+window.loginAdmin = loginAdmin;
+window.logout = logout;
 window.addPost = addPost;
 window.renderPosts = renderPosts;
-window.setGrid = setGrid;
-window.setList = setList;
-window.toggleTheme = toggleTheme;
+window.deletePost = deletePost;
+
 </script>
 
 </body>
