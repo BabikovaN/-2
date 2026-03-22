@@ -12,26 +12,23 @@ body {
   background: #f2f4f8;
 }
 
-.hidden {
-  display: none;
-}
+.hidden { display: none; }
 
-/* AUTH SCREEN */
+/* AUTH */
 #authScreen {
   height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  flex-direction: column;
 }
 
 .auth-box {
   background: white;
   padding: 20px;
   border-radius: 12px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
   width: 280px;
   text-align: center;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
 }
 
 input {
@@ -40,7 +37,6 @@ input {
   margin: 6px 0;
 }
 
-/* BUTTONS */
 button {
   padding: 8px 10px;
   border: none;
@@ -48,34 +44,39 @@ button {
   color: white;
   border-radius: 6px;
   cursor: pointer;
-  margin-top: 5px;
 }
 
 /* APP */
+#app {
+  display: flex;
+}
+
+/* MAIN CONTENT */
+.main {
+  flex: 1;
+}
+
+/* HEADER */
 header {
   background: #ff6b9a;
   color: white;
   padding: 15px;
   display: flex;
   justify-content: space-between;
-  align-items: center;
 }
 
+/* POSTS */
 .container {
   padding: 15px;
-  max-width: 1000px;
-  margin: auto;
 }
 
-/* POST */
 .post {
   background: white;
   padding: 10px;
-  border-radius: 12px;
   margin: 10px 0;
+  border-radius: 12px;
   display: flex;
   gap: 10px;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
 }
 
 .post img {
@@ -85,23 +86,30 @@ header {
   border-radius: 10px;
 }
 
-.post-content {
-  flex: 1;
+/* SIDE PANEL */
+.side {
+  width: 200px;
+  background: #fff;
+  border-left: 1px solid #ddd;
+  padding: 10px;
 }
 
-/* ADMIN PANEL */
+.side h3 {
+  margin-top: 0;
+}
+
 .admin-panel {
-  background: white;
-  padding: 15px;
-  border-radius: 12px;
-  margin-bottom: 15px;
+  background: #fff;
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 10px;
 }
 </style>
 </head>
 
 <body>
 
-<!-- AUTH SCREEN -->
+<!-- AUTH -->
 <div id="authScreen">
   <div class="auth-box">
     <h2>Оберіть роль</h2>
@@ -117,38 +125,47 @@ header {
   </div>
 </div>
 
-<!-- MAIN APP -->
+<!-- APP -->
 <div id="app" class="hidden">
 
-<header>
-  🍬 Солодкий ринок
-  <button onclick="logout()">Вийти</button>
-</header>
+  <div class="main">
 
-<div class="container">
+    <header>
+      🍬 Солодкий ринок
+      <button onclick="logout()">Вийти</button>
+    </header>
 
-<!-- ADMIN PANEL -->
-<div id="adminPanel" class="admin-panel hidden">
-  <h3>Адмін панель</h3>
+    <div class="container">
 
-  <input id="title" placeholder="Назва">
-  <textarea id="desc" placeholder="Опис"></textarea>
-  <input id="price" placeholder="Ціна">
-  <input id="color" placeholder="Колір">
+      <!-- ADMIN PANEL -->
+      <div id="adminPanel" class="admin-panel hidden">
+        <h3>Адмін панель</h3>
 
-  <input id="inst" placeholder="Instagram">
-  <input id="tg" placeholder="Telegram">
-  <input id="phone" placeholder="Телефон">
-  <input id="email" placeholder="Email">
+        <input id="title" placeholder="Назва">
+        <textarea id="desc" placeholder="Опис"></textarea>
+        <input id="price" placeholder="Ціна">
 
-  <input type="file" id="image">
+        <input id="inst" placeholder="Instagram">
+        <input id="tg" placeholder="Telegram">
+        <input id="phone" placeholder="Телефон">
+        <input id="email" placeholder="Email">
 
-  <button onclick="addPost()">➕ Додати</button>
-</div>
+        <input type="file" id="image">
 
-<div id="posts"></div>
+        <button onclick="addPost()">➕ Додати</button>
+      </div>
 
-</div>
+      <div id="posts"></div>
+
+    </div>
+  </div>
+
+  <!-- SIDE PANEL -->
+  <div class="side">
+    <h3 id="roleTitle">Роль: Гість</h3>
+    <p id="roleInfo">Перегляд товарів</p>
+  </div>
+
 </div>
 
 <script type="module">
@@ -167,16 +184,10 @@ const db = getFirestore(app);
 let isAdmin = false;
 let posts = [];
 
-/* ===== AUTH ===== */
-
+/* AUTH */
 function enterGuest() {
   isAdmin = false;
-  document.getElementById("authScreen").classList.add("hidden");
-  document.getElementById("app").classList.remove("hidden");
-
-  document.getElementById("adminPanel").classList.add("hidden");
-
-  loadPosts();
+  startApp();
 }
 
 function showAdminLogin() {
@@ -189,23 +200,29 @@ function loginAdmin() {
 
   if (l === "Nastuhsa" && p === "Babikovf") {
     isAdmin = true;
-
-    document.getElementById("authScreen").classList.add("hidden");
-    document.getElementById("app").classList.remove("hidden");
-    document.getElementById("adminPanel").classList.remove("hidden");
-
-    loadPosts();
+    startApp();
   } else {
     alert("Невірно");
   }
+}
+
+function startApp() {
+  document.getElementById("authScreen").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+
+  document.getElementById("adminPanel").classList.toggle("hidden", !isAdmin);
+
+  document.getElementById("roleTitle").innerText = isAdmin ? "Роль: Адмін" : "Роль: Гість";
+  document.getElementById("roleInfo").innerText = isAdmin ? "Можна додавати і видаляти" : "Тільки перегляд";
+
+  loadPosts();
 }
 
 function logout() {
   location.reload();
 }
 
-/* ===== FIREBASE ===== */
-
+/* FIREBASE */
 async function loadPosts() {
   const snap = await getDocs(collection(db, "posts"));
   posts = [];
@@ -226,11 +243,10 @@ function renderPosts() {
     div.innerHTML = `
       ${p.image ? `<img src="${p.image}">` : ""}
 
-      <div class="post-content">
+      <div>
         <h3>${p.title}</h3>
         <p>${p.desc}</p>
         <b>💰 ${p.price} грн</b>
-        <p>🎨 ${p.color || ""}</p>
 
         <div>
           ${p.inst ? `<a href="${p.inst}" target="_blank">Instagram</a><br>` : ""}
@@ -248,10 +264,9 @@ function renderPosts() {
 }
 
 async function addPost() {
-  const title = document.getElementById("title").value;
-  const desc = document.getElementById("desc").value;
-  const price = document.getElementById("price").value;
-  const color = document.getElementById("color").value;
+  const title = titleInput.value;
+  const desc = descInput.value;
+  const price = priceInput.value;
 
   const inst = document.getElementById("inst").value;
   const tg = document.getElementById("tg").value;
@@ -267,7 +282,6 @@ async function addPost() {
       title,
       desc,
       price,
-      color,
       inst,
       tg,
       phone,
@@ -280,7 +294,7 @@ async function addPost() {
 
   if (file) {
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = e => {
       image = e.target.result;
       save();
     };
