@@ -1,1 +1,142 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<title>🍩 Солодкий маркет</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  font-family: Arial;
+  background: linear-gradient(to bottom, #ffe0f0, #fff8dc);
+  padding: 15px;
+  margin: 0;
+}
+
+h1 {
+  text-align: center;
+}
+
+/* форма */
+.form {
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+input, textarea {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+button {
+  margin-top: 10px;
+  padding: 12px;
+  width: 100%;
+  border: none;
+  background: #ff69b4;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* картки */
+.card {
+  background: white;
+  padding: 12px;
+  border-radius: 12px;
+  margin-top: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.price {
+  color: green;
+  font-weight: bold;
+}
+
+.delete {
+  background: red;
+  margin-top: 5px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🍩 Солодкий маркет</h1>
+
+<div class="form">
+  <h3>Додати товар</h3>
+
+  <input id="title" placeholder="Назва (пончик, печиво...)">
+  <textarea id="desc" placeholder="Опис"></textarea>
+  <input id="price" placeholder="Ціна (грн)">
+
+  <button onclick="addPost()">Додати 🍬</button>
+</div>
+
+<div id="posts"></div>
+
+<script>
+
+let posts = JSON.parse(localStorage.getItem("posts")) || [];
+
+function renderPosts() {
+  const container = document.getElementById("posts");
+  container.innerHTML = "";
+
+  posts.forEach((post, index) => {
+    const div = document.createElement("div");
+    div.className = "card";
+
+    div.innerHTML = `
+      <h3>${post.title}</h3>
+      <p>${post.desc}</p>
+      <div class="price">${post.price} грн</div>
+      <button class="delete" onclick="deletePost(${index})">❌ Видалити</button>
+    `;
+
+    container.appendChild(div);
+  });
+}
+
+function addPost() {
+  const title = document.getElementById("title").value;
+  const desc = document.getElementById("desc").value;
+  const price = document.getElementById("price").value;
+
+  if (!title || !price) {
+    alert("Заповни назву і ціну!");
+    return;
+  }
+
+  posts.unshift({ title, desc, price });
+
+  localStorage.setItem("posts", JSON.stringify(posts));
+
+  document.getElementById("title").value = "";
+  document.getElementById("desc").value = "";
+  document.getElementById("price").value = "";
+
+  renderPosts();
+}
+
+function deletePost(index) {
+  posts.splice(index, 1);
+  localStorage.setItem("posts", JSON.stringify(posts));
+  renderPosts();
+}
+
+renderPosts();
+
+</script>
+
+</body>
+</html>
 
