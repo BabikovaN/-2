@@ -123,11 +123,6 @@ header {
         <textarea id="desc" placeholder="Опис"></textarea>
         <input id="price" placeholder="Ціна">
 
-        <input id="inst" placeholder="Instagram">
-        <input id="tg" placeholder="Telegram">
-        <input id="phone" placeholder="Телефон">
-        <input id="email" placeholder="Email">
-
         <input type="file" id="image">
 
         <button onclick="addPost()">Додати</button>
@@ -150,7 +145,14 @@ header {
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { 
+  getFirestore, 
+  collection, 
+  addDoc, 
+  getDocs,
+  query,
+  orderBy
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 /* Firebase config */
 const firebaseConfig = {
@@ -162,12 +164,17 @@ const firebaseConfig = {
 const appFirebase = initializeApp(firebaseConfig);
 const db = getFirestore(appFirebase);
 
-/* FIX DOM ACCESS */
+/* DOM */
 const authScreen = document.getElementById("authScreen");
 const adminLogin = document.getElementById("adminLogin");
 const appDiv = document.getElementById("app");
 const adminPanel = document.getElementById("adminPanel");
 const postsContainer = document.getElementById("posts");
+
+const titleInput = document.getElementById("title");
+const descInput = document.getElementById("desc");
+const priceInput = document.getElementById("price");
+const imageInput = document.getElementById("image");
 
 let isAdmin = false;
 
@@ -227,9 +234,11 @@ function logout() {
   location.reload();
 }
 
-/* LOAD POSTS */
+/* LOAD POSTS WITH SORT */
 async function loadPosts() {
-  const snap = await getDocs(collection(db, "posts"));
+  const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+  const snap = await getDocs(q);
+
   postsContainer.innerHTML = "";
 
   snap.forEach(d => {
@@ -253,7 +262,7 @@ async function loadPosts() {
 
 /* ADD POST */
 async function addPost() {
-  const file = document.getElementById("image").files[0];
+  const file = imageInput.files[0];
   let imageUrl = "";
 
   if (file) {
@@ -262,19 +271,30 @@ async function addPost() {
       imageUrl = e.target.result;
 
       await addDoc(collection(db, "posts"), {
-        title: title.value,
-        desc: desc.value,
-        price: price.value,
-        image: imageUrl
+        title: titleInput.value,
+        desc: descInput.value,
+        price: priceInput.value,
+        image: imageUrl,
+        createdAt: new Date()
       });
 
       loadPosts();
     };
     reader.readAsDataURL(file);
+  } else {
+    await addDoc(collection(db, "posts"), {
+      title: titleInput.value,
+      desc: descInput.value,
+      price: priceInput.value,
+      image: "",
+      createdAt: new Date()
+    });
+
+    loadPosts();
   }
 }
 
-/* GLOBAL EXPORT */
+/* GLOBAL */
 window.enterGuest = enterGuest;
 window.showAdminLogin = showAdminLogin;
 window.loginAdmin = loginAdmin;
