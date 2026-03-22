@@ -164,11 +164,13 @@ import {
   updateDoc,
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
 const firebaseConfig = {
-  apiKey: "YOUR_KEY",
-  authDomain: "YOUR_DOMAIN",
-  projectId: "YOUR_ID",
+  apiKey: "AIzaSyD5oRMuZ9-HWC2phcBhiURBlUiHvUJTKak",
+  authDomain: "sweet-market-9c94e.firebaseapp.com",
+  projectId: "sweet-market-9c94e",
+  storageBucket: "sweet-market-9c94e.firebasestorage.app",
+  messagingSenderId: "583966719717",
+  appId: "1:583966719717:web:f16675f96d95fa83b19e0c"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -192,8 +194,8 @@ document.getElementById("adminBtn").onclick = () => {
 
 /* LOGIN */
 window.loginAdmin = () => {
-  const l = login.value;
-  const p = password.value;
+const l = document.getElementById("login").value;
+const p = document.getElementById("password").value;
 
   if(l==="admin" && p==="1234"){
     localStorage.setItem("admin","true");
@@ -272,7 +274,7 @@ function render(){
 /* ADD */
 document.getElementById("addBtn").onclick = async ()=>{
 
-  const files = images.files;
+  const files = document.getElementById("images").files;
 
   if(!title.value || !price.value){
     alert("Заповни поля");
@@ -333,7 +335,8 @@ window.del=async(id)=>{
 
 /* MODAL */
 window.openModal=(src)=>{
-  modal.style.display="flex";
+ const modal = document.getElementById("modal");
+const modalImg = document.getElementById("modalImg");
   modalImg.src=src;
 };
 
