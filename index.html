@@ -9,7 +9,7 @@
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background: linear-gradient(135deg, #dfe9f3, #ffffff);
+  background: linear-gradient(135deg, #ffd6c1, #ffb6b9, #ffc3a0);
   color: #333;
 }
 
@@ -23,12 +23,12 @@ body {
 }
 
 .auth-box {
-  background: #fff;
+  background: white;
   padding: 20px;
   border-radius: 16px;
   width: 300px;
   text-align: center;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
 }
 
 input, textarea, select {
@@ -42,19 +42,19 @@ input, textarea, select {
 button {
   padding: 10px;
   border: none;
-  background: #a8d0e6;
-  color: #1f2d3d;
+  background: #ff8fab;
+  color: white;
   border-radius: 8px;
   cursor: pointer;
 }
 
 button:hover {
-  background: #8fc1d4;
+  background: #ff6f91;
 }
 
 header {
-  background: #a8d0e6;
-  color: #1f2d3d;
+  background: rgba(255, 143, 171, 0.9);
+  color: white;
   padding: 15px;
   display: flex;
   justify-content: space-between;
@@ -65,20 +65,16 @@ header {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 15px;
-}
-
-.list {
-  display: flex;
-  flex-direction: column;
+  padding: 10px;
 }
 
 .post {
-  background: #fff;
+  background: white;
   padding: 12px;
   border-radius: 14px;
   display: flex;
   gap: 12px;
-  box-shadow: 0 6px 15px rgba(0,0,0,0.06);
+  box-shadow: 0 6px 15px rgba(0,0,0,0.08);
 }
 
 .post img {
@@ -92,47 +88,14 @@ header {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-  margin-bottom: 12px;
+  padding: 10px;
 }
 
 .side {
   width: 200px;
-  background: #fff;
+  background: white;
   padding: 12px;
   border-left: 1px solid #eee;
-}
-
-/* DARK */
-body.dark {
-  background: #1e2a38;
-  color: #eaeaea;
-}
-
-body.dark .post {
-  background: #2a3b4d;
-  color: #fff;
-}
-
-body.dark header {
-  background: #2f4f6f;
-  color: white;
-}
-
-body.dark .auth-box {
-  background: #2a3b4d;
-  color: white;
-}
-
-body.dark input,
-body.dark textarea,
-body.dark select {
-  background: #1e2a38;
-  color: white;
-  border: 1px solid #445;
-}
-
-body.dark button {
-  background: #6fa8dc;
 }
 </style>
 </head>
@@ -161,15 +124,13 @@ body.dark button {
 <header>
   🍬 Солодкий ринок
   <div>
-    <button onclick="toggleTheme()">🌗</button>
-    <button onclick="toggleView()">🔘</button>
     <button onclick="logout()">Вийти</button>
   </div>
 </header>
 
 <div style="display:flex;">
 
-<div style="flex:1; padding:15px;">
+<div style="flex:1;">
 
 <div class="controls">
   <input id="search" placeholder="🔎 Пошук...">
@@ -181,21 +142,21 @@ body.dark button {
   </select>
 </div>
 
-<div id="adminPanel" class="hidden">
+<div id="adminPanel" class="hidden" style="padding:10px;">
   <h3>Адмін панель</h3>
 
   <input id="title" placeholder="Назва">
   <textarea id="desc" placeholder="Опис"></textarea>
   <input id="price" placeholder="Ціна">
 
-  <input id="inst" placeholder="Instagram">
-  <input id="tg" placeholder="Telegram">
-  <input id="phone" placeholder="Телефон">
-  <input id="email" placeholder="Email">
+  <input id="inst" placeholder="Instagram (необов'язково)">
+  <input id="tg" placeholder="Telegram (необов'язково)">
+  <input id="phone" placeholder="Телефон (необов'язково)">
+  <input id="email" placeholder="Email (необов'язково)">
 
   <input type="file" id="image">
 
-  <button onclick="addPost()">Додати</button>
+  <button id="addBtn">Додати</button>
 </div>
 
 <div id="posts" class="grid"></div>
@@ -225,6 +186,7 @@ import {
   updateDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+/* ⚠️ ВСТАВ СВОЇ ДАНІ FIREBASE */
 const firebaseConfig = {
   apiKey: "YOUR_KEY",
   authDomain: "YOUR_DOMAIN",
@@ -241,7 +203,6 @@ const postsDiv = document.getElementById("posts");
 
 let isAdmin = false;
 let postsData = [];
-let viewMode = "grid";
 
 /* AUTH */
 window.onload = () => {
@@ -307,21 +268,9 @@ async function loadPosts() {
 
 /* RENDER */
 function renderPosts() {
-  let data = [...postsData];
-
-  const searchVal = document.getElementById("search").value.toLowerCase();
-  const sortVal = document.getElementById("sort").value;
-
-  if (searchVal) {
-    data = data.filter(p => p.title.toLowerCase().includes(searchVal));
-  }
-
-  if (sortVal === "asc") data.sort((a,b)=>a.price-b.price);
-  if (sortVal === "desc") data.sort((a,b)=>b.price-a.price);
-
   postsDiv.innerHTML = "";
 
-  data.forEach(p => {
+  postsData.forEach(p => {
     const div = document.createElement("div");
     div.className = "post";
 
@@ -340,7 +289,6 @@ function renderPosts() {
         </div>
 
         ${isAdmin ? `
-        <button onclick="editPost('${p.id}')">✏️</button>
         <button onclick="deletePost('${p.id}')">❌</button>
         ` : ""}
       </div>
@@ -350,13 +298,19 @@ function renderPosts() {
   });
 }
 
-/* ADD */
-window.addPost = async () => {
+/* ✅ FIXED ADD BUTTON */
+document.getElementById("addBtn").onclick = async () => {
   const file = image.files[0];
+  if (!title.value || !desc.value || !price.value) {
+    alert("❗ Заповни обов'язкові поля");
+    return;
+  }
+
   let img = "";
 
   if (file) {
     const reader = new FileReader();
+
     reader.onload = async e => {
       img = e.target.result;
 
@@ -364,16 +318,30 @@ window.addPost = async () => {
         title: title.value,
         desc: desc.value,
         price: Number(price.value),
-        inst: inst.value,
-        tg: tg.value,
-        phone: phone.value,
-        email: email.value,
+        inst: inst.value || "",
+        tg: tg.value || "",
+        phone: phone.value || "",
+        email: email.value || "",
         image: img
       });
 
       loadPosts();
     };
+
     reader.readAsDataURL(file);
+  } else {
+    await addDoc(collection(db,"posts"), {
+      title: title.value,
+      desc: desc.value,
+      price: Number(price.value),
+      inst: inst.value || "",
+      tg: tg.value || "",
+      phone: phone.value || "",
+      email: email.value || "",
+      image: ""
+    });
+
+    loadPosts();
   }
 };
 
@@ -383,40 +351,6 @@ window.deletePost = async (id) => {
   await deleteDoc(doc(db,"posts",id));
   loadPosts();
 };
-
-/* EDIT */
-window.editPost = async (id) => {
-  const p = postsData.find(x => x.id === id);
-
-  const t = prompt("Назва", p.title);
-  const d = prompt("Опис", p.desc);
-  const pr = prompt("Ціна", p.price);
-
-  if (!t) return;
-
-  await updateDoc(doc(db,"posts",id), {
-    title: t,
-    desc: d,
-    price: Number(pr)
-  });
-
-  loadPosts();
-};
-
-/* VIEW */
-window.toggleView = () => {
-  viewMode = viewMode === "grid" ? "list" : "grid";
-  postsDiv.className = viewMode;
-};
-
-/* THEME */
-window.toggleTheme = () => {
-  document.body.classList.toggle("dark");
-};
-
-/* SEARCH / SORT */
-document.getElementById("search").oninput = renderPosts;
-document.getElementById("sort").onchange = renderPosts;
 
 /* GLOBAL */
 window.enterGuest = enterGuest;
