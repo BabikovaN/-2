@@ -8,47 +8,28 @@
 <style>
 body {
   margin: 0;
-  font-family: Arial;
-  background: #f2f4f8;
+  font-family: Arial, sans-serif;
+  background: #f4f6fb;
 }
 
-.hidden { display: none; }
-
-#authScreen {
+/* AUTH */
+#auth {
   height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-.auth-box {
+.card {
   background: white;
   padding: 20px;
   border-radius: 12px;
-  width: 280px;
+  width: 300px;
   text-align: center;
 }
 
-input, textarea {
-  width: 100%;
-  padding: 8px;
-  margin: 5px 0;
-}
-
-button {
-  padding: 8px;
-  border: none;
-  background: #ff6b9a;
-  color: white;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-#app {
-  display: flex;
-}
-
-.main { flex: 1; }
+/* LAYOUT */
+.hidden { display: none; }
 
 header {
   background: #ff6b9a;
@@ -62,27 +43,60 @@ header {
   padding: 15px;
 }
 
-.post {
-  background: white;
-  padding: 10px;
-  margin: 10px 0;
-  border-radius: 12px;
-  display: flex;
-  gap: 10px;
+/* PRODUCTS */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 15px;
 }
 
-.post img {
-  width: 120px;
-  height: 120px;
+.product {
+  background: white;
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.product img {
+  width: 100%;
+  height: 180px;
   object-fit: cover;
   border-radius: 10px;
 }
 
+.price {
+  font-weight: bold;
+  margin-top: 5px;
+}
+
+/* FORM */
+input, textarea {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+}
+
+button {
+  background: #ff6b9a;
+  color: white;
+  border: none;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 5px;
+}
+
+/* SIDE PANEL */
 .side {
-  width: 180px;
+  position: fixed;
+  right: 0;
+  top: 80px;
   background: white;
-  border-left: 1px solid #ddd;
   padding: 10px;
+  border-radius: 10px 0 0 10px;
+  width: 150px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 </style>
 </head>
@@ -90,17 +104,16 @@ header {
 <body>
 
 <!-- AUTH -->
-<div id="authScreen">
-  <div class="auth-box">
-    <h3>Оберіть роль</h3>
+<div id="auth">
+  <div class="card">
+    <h3>Виберіть роль</h3>
+    <button id="guestBtn">Гість</button>
+    <button id="adminBtn">Адмін</button>
 
-    <button onclick="enterGuest()">👤 Гість</button>
-    <button onclick="showAdminLogin()">🔐 Адмін</button>
-
-    <div id="adminLogin" class="hidden">
+    <div id="loginBox" class="hidden">
       <input id="login" placeholder="Логін">
       <input id="password" type="password" placeholder="Пароль">
-      <button onclick="loginAdmin()">Увійти</button>
+      <button id="loginBtn">Увійти</button>
     </div>
   </div>
 </div>
@@ -108,53 +121,55 @@ header {
 <!-- APP -->
 <div id="app" class="hidden">
 
-  <div class="main">
-    <header>
-      🍬 Солодкий ринок
-      <button onclick="logout()">Вийти</button>
-    </header>
+<header>
+  <div>🍬 Солодкий ринок</div>
+  <button id="logoutBtn">Вийти</button>
+</header>
 
-    <div class="container">
+<div class="container">
 
-      <div id="adminPanel" class="hidden">
-        <h3>Адмін панель</h3>
+  <!-- ADMIN PANEL -->
+  <div id="adminPanel" class="hidden">
+    <h3>Адмін панель</h3>
 
-        <input id="title" placeholder="Назва">
-        <textarea id="desc" placeholder="Опис"></textarea>
-        <input id="price" placeholder="Ціна">
+    <input id="title" placeholder="Назва">
+    <textarea id="desc" placeholder="Опис"></textarea>
+    <input id="price" placeholder="Ціна">
 
-        <input type="file" id="image">
+    <input id="inst" placeholder="Instagram">
+    <input id="tg" placeholder="Telegram">
+    <input id="phone" placeholder="Телефон">
+    <input id="email" placeholder="Email">
 
-        <button onclick="addPost()">Додати</button>
-      </div>
+    <input type="file" id="image">
 
-      <div id="posts"></div>
-
-    </div>
+    <button id="addBtn">Додати товар</button>
   </div>
 
-  <div class="side">
-    <h3 id="roleTitle"></h3>
-    <p id="roleInfo"></p>
+  <div id="products" class="grid"></div>
 
-    <button onclick="enterGuest()">Гість</button>
-    <button onclick="showAdminLogin()">Адмін</button>
-  </div>
+</div>
+
+<!-- SIDE -->
+<div class="side">
+  <div id="roleText"></div>
+</div>
 
 </div>
 
 <script type="module">
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { 
   getFirestore, 
   collection, 
   addDoc, 
-  getDocs,
-  query,
-  orderBy
+  getDocs, 
+  query, 
+  orderBy 
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* Firebase config */
+/* FIREBASE */
 const firebaseConfig = {
   apiKey: "YOUR_KEY",
   authDomain: "YOUR_DOMAIN",
@@ -164,21 +179,34 @@ const firebaseConfig = {
 const appFirebase = initializeApp(firebaseConfig);
 const db = getFirestore(appFirebase);
 
-/* DOM */
-const authScreen = document.getElementById("authScreen");
-const adminLogin = document.getElementById("adminLogin");
-const appDiv = document.getElementById("app");
+/* ELEMENTS */
+const auth = document.getElementById("auth");
+const app = document.getElementById("app");
 const adminPanel = document.getElementById("adminPanel");
-const postsContainer = document.getElementById("posts");
+const products = document.getElementById("products");
+const roleText = document.getElementById("roleText");
 
-const titleInput = document.getElementById("title");
-const descInput = document.getElementById("desc");
-const priceInput = document.getElementById("price");
-const imageInput = document.getElementById("image");
+/* AUTH BUTTONS */
+const guestBtn = document.getElementById("guestBtn");
+const adminBtn = document.getElementById("adminBtn");
+const loginBox = document.getElementById("loginBox");
+const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const addBtn = document.getElementById("addBtn");
+
+/* INPUTS */
+const title = document.getElementById("title");
+const desc = document.getElementById("desc");
+const price = document.getElementById("price");
+const inst = document.getElementById("inst");
+const tg = document.getElementById("tg");
+const phone = document.getElementById("phone");
+const email = document.getElementById("email");
+const image = document.getElementById("image");
 
 let isAdmin = false;
 
-/* AUTO LOGIN */
+/* INIT */
 window.onload = () => {
   const role = localStorage.getItem("role");
 
@@ -188,118 +216,107 @@ window.onload = () => {
   } else if (role === "guest") {
     isAdmin = false;
     startApp();
-  } else {
-    authScreen.classList.remove("hidden");
   }
 };
 
-/* AUTH */
-function enterGuest() {
+/* EVENTS */
+guestBtn.onclick = () => {
   isAdmin = false;
   localStorage.setItem("role", "guest");
   startApp();
-}
+};
 
-function showAdminLogin() {
-  adminLogin.classList.remove("hidden");
-}
+adminBtn.onclick = () => {
+  loginBox.classList.remove("hidden");
+};
 
-function loginAdmin() {
-  const l = document.getElementById("login").value;
-  const p = document.getElementById("password").value;
+loginBtn.onclick = () => {
+  const l = login.value;
+  const p = password.value;
 
-  if (l === "Nastuhsa" && p === "Babikovf") {
+  if (l === "admin" && p === "1234") {
     isAdmin = true;
     localStorage.setItem("role", "admin");
     startApp();
   } else {
-    alert("❌ Невірний логін");
+    alert("Невірний логін");
   }
-}
+};
 
-function startApp() {
-  authScreen.classList.add("hidden");
-  appDiv.classList.remove("hidden");
-
-  adminPanel.classList.toggle("hidden", !isAdmin);
-
-  document.getElementById("roleTitle").innerText = isAdmin ? "Адмін" : "Гість";
-  document.getElementById("roleInfo").innerText = isAdmin ? "Повний доступ" : "Перегляд";
-
-  loadPosts();
-}
-
-function logout() {
+logoutBtn.onclick = () => {
   localStorage.removeItem("role");
   location.reload();
+};
+
+addBtn.onclick = addProduct;
+
+/* APP START */
+function startApp() {
+  auth.classList.add("hidden");
+  app.classList.remove("hidden");
+
+  adminPanel.classList.toggle("hidden", !isAdmin);
+  roleText.innerText = isAdmin ? "Адмін" : "Гість";
+
+  loadProducts();
 }
 
-/* LOAD POSTS WITH SORT */
-async function loadPosts() {
+/* LOAD */
+async function loadProducts() {
   const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
   const snap = await getDocs(q);
 
-  postsContainer.innerHTML = "";
+  products.innerHTML = "";
 
-  snap.forEach(d => {
-    const p = d.data();
+  snap.forEach(doc => {
+    const p = doc.data();
 
     const div = document.createElement("div");
-    div.className = "post";
+    div.className = "product";
 
     div.innerHTML = `
       ${p.image ? `<img src="${p.image}">` : ""}
-      <div>
-        <h3>${p.title}</h3>
-        <p>${p.desc}</p>
-        <b>${p.price} грн</b>
-      </div>
+      <h3>${p.title}</h3>
+      <p>${p.desc}</p>
+      <div class="price">${p.price} грн</div>
+
+      <small>${p.inst || ""}</small>
+      <small>${p.tg || ""}</small>
+      <small>${p.phone || ""}</small>
+      <small>${p.email || ""}</small>
     `;
 
-    postsContainer.appendChild(div);
+    products.appendChild(div);
   });
 }
 
-/* ADD POST */
-async function addPost() {
-  const file = imageInput.files[0];
-  let imageUrl = "";
+/* ADD */
+async function addProduct() {
+  const file = image.files[0];
+  let imgData = "";
 
   if (file) {
     const reader = new FileReader();
     reader.onload = async (e) => {
-      imageUrl = e.target.result;
+      imgData = e.target.result;
 
       await addDoc(collection(db, "posts"), {
-        title: titleInput.value,
-        desc: descInput.value,
-        price: priceInput.value,
-        image: imageUrl,
+        title: title.value,
+        desc: desc.value,
+        price: price.value,
+        inst: inst.value,
+        tg: tg.value,
+        phone: phone.value,
+        email: email.value,
+        image: imgData,
         createdAt: new Date()
       });
 
-      loadPosts();
+      loadProducts();
     };
     reader.readAsDataURL(file);
-  } else {
-    await addDoc(collection(db, "posts"), {
-      title: titleInput.value,
-      desc: descInput.value,
-      price: priceInput.value,
-      image: "",
-      createdAt: new Date()
-    });
-
-    loadPosts();
   }
 }
-
-/* GLOBAL */
-window.enterGuest = enterGuest;
-window.showAdminLogin = showAdminLogin;
-window.loginAdmin = loginAdmin;
-window.logout = logout;
-window.addPost = addPost;
 
 </script>
 
