@@ -28,7 +28,7 @@ header {
   font-weight: bold;
 }
 
-/* LOGIN MODAL */
+/* LOGIN BOX */
 #loginBox {
   position: fixed;
   top: 60px;
@@ -41,6 +41,7 @@ header {
   display: none;
 }
 
+/* INPUTS */
 input, textarea {
   width: 100%;
   padding: 8px;
@@ -58,22 +59,19 @@ button {
   cursor: pointer;
 }
 
+button:hover {
+  background: #5fb5f5;
+}
+
 /* LAYOUT */
 .container {
   padding: 10px;
 }
 
-.controls {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 10px;
-}
-
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
 }
 
 /* CARD */
@@ -86,9 +84,9 @@ button {
 
 .card img {
   width: 100%;
-  border-radius: 10px;
   height: 120px;
   object-fit: cover;
+  border-radius: 10px;
 }
 
 /* ADMIN PANEL */
@@ -102,11 +100,6 @@ button {
 
 /* MOBILE */
 @media (max-width: 600px) {
-  header {
-    flex-direction: row;
-    font-size: 14px;
-  }
-
   .grid {
     grid-template-columns: 1fr;
   }
@@ -138,10 +131,10 @@ button {
   <textarea id="desc" placeholder="Опис"></textarea>
   <input id="price" placeholder="Ціна">
 
-  <input id="inst" placeholder="Instagram">
-  <input id="tg" placeholder="Telegram">
-  <input id="phone" placeholder="Телефон">
-  <input id="email" placeholder="Email">
+  <input id="inst" placeholder="Instagram (необов'язково)">
+  <input id="tg" placeholder="Telegram (необов'язково)">
+  <input id="phone" placeholder="Телефон (необов'язково)">
+  <input id="email" placeholder="Email (необов'язково)">
 
   <input type="file" id="image">
 
@@ -163,7 +156,7 @@ import {
   doc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* FIREBASE */
+/* 🔥 FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "YOUR_KEY",
   authDomain: "YOUR_DOMAIN",
@@ -173,16 +166,36 @@ const firebaseConfig = {
 const appFirebase = initializeApp(firebaseConfig);
 const db = getFirestore(appFirebase);
 
-let isAdmin = false;
-let posts = [];
-
-/* UI ELEMENTS */
+/* ELEMENTS */
 const adminBtn = document.getElementById("adminBtn");
 const loginBox = document.getElementById("loginBox");
 const adminPanel = document.getElementById("adminPanel");
 const postsDiv = document.getElementById("posts");
 
-/* ADMIN MENU */
+/* INPUTS */
+const title = document.getElementById("title");
+const desc = document.getElementById("desc");
+const price = document.getElementById("price");
+const image = document.getElementById("image");
+const inst = document.getElementById("inst");
+const tg = document.getElementById("tg");
+const phone = document.getElementById("phone");
+const email = document.getElementById("email");
+
+let isAdmin = false;
+let posts = [];
+
+/* 🔐 CHECK ADMIN SESSION */
+window.onload = () => {
+  if (localStorage.getItem("admin") === "true") {
+    isAdmin = true;
+    adminPanel.style.display = "block";
+  }
+
+  loadPosts();
+};
+
+/* ADMIN BUTTON */
 adminBtn.onclick = () => {
   loginBox.style.display = loginBox.style.display === "block" ? "none" : "block";
 };
@@ -191,8 +204,11 @@ adminBtn.onclick = () => {
 window.loginAdmin = () => {
   if (login.value === "admin" && password.value === "1234") {
     isAdmin = true;
+    localStorage.setItem("admin", "true");
+
     loginBox.style.display = "none";
     adminPanel.style.display = "block";
+
     loadPosts();
   } else {
     alert("❌ Невірний логін");
@@ -205,6 +221,7 @@ async function loadPosts() {
   posts = [];
 
   snap.forEach(d => posts.push({ id: d.id, ...d.data() }));
+
   render();
 }
 
@@ -236,17 +253,20 @@ function render() {
   });
 }
 
-/* ADD */
+/* ➕ ADD POST */
 document.getElementById("addBtn").onclick = async () => {
+
+  if (!title.value || !desc.value || !price.value) {
+    alert("❗ Заповни обов'язкові поля");
+    return;
+  }
+
   const file = image.files[0];
-  let img = "";
 
   if (file) {
     const reader = new FileReader();
 
     reader.onload = async e => {
-      img = e.target.result;
-
       await addDoc(collection(db,"posts"), {
         title: title.value,
         desc: desc.value,
@@ -255,15 +275,42 @@ document.getElementById("addBtn").onclick = async () => {
         tg: tg.value || "",
         phone: phone.value || "",
         email: email.value || "",
-        image: img
+        image: e.target.result
       });
 
+      clearForm();
       loadPosts();
     };
 
     reader.readAsDataURL(file);
+  } else {
+    await addDoc(collection(db,"posts"), {
+      title: title.value,
+      desc: desc.value,
+      price: Number(price.value),
+      inst: inst.value || "",
+      tg: tg.value || "",
+      phone: phone.value || "",
+      email: email.value || "",
+      image: ""
+    });
+
+    clearForm();
+    loadPosts();
   }
 };
+
+/* CLEAR FORM */
+function clearForm() {
+  title.value = "";
+  desc.value = "";
+  price.value = "";
+  inst.value = "";
+  tg.value = "";
+  phone.value = "";
+  email.value = "";
+  image.value = "";
+}
 
 /* DELETE */
 window.deletePost = async (id) => {
