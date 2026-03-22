@@ -1,116 +1,31 @@
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-<meta charset="UTF-8">
-<title>Солодкий маркет 🍩</title>
+<script type="module">
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-<style>
-body {
-  font-family: Arial;
-  margin: 0;
-  padding: 15px;
-  background: linear-gradient(135deg, #ffe0f0, #fff5cc);
-}
+const firebaseConfig = {
+  apiKey: "AIzaSyD5oRMuZ9-HWC2phcBhiURBlUiHvUJTKak",
+  authDomain: "sweet-market-9c94e.firebaseapp.com",
+  projectId: "sweet-market-9c94e",
+};
 
-h1 { text-align: center; }
-
-/* КНОПКА СПРАВА */
-.top-btn {
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  width: auto;
-  padding: 8px 12px;
-  font-size: 14px;
-}
-
-.box {
-  background: white;
-  padding: 15px;
-  border-radius: 12px;
-  margin-bottom: 20px;
-}
-
-input, textarea {
-  width: 100%;
-  padding: 10px;
-  margin-top: 8px;
-  border-radius: 8px;
-}
-
-button {
-  margin-top: 10px;
-  padding: 12px;
-  border: none;
-  background: #ff6fa5;
-  color: white;
-  border-radius: 8px;
-  cursor: pointer;
-  width: 100%;
-}
-
-.post {
-  background: white;
-  padding: 10px;
-  border-radius: 12px;
-  margin-top: 10px;
-}
-
-.post img {
-  width: 100%;
-  max-width: 200px;
-  border-radius: 10px;
-}
-</style>
-</head>
-
-<body>
-
-<h1>🍩 Солодкий маркет</h1>
-
-<!-- КНОПКА ПЕРЕМИКАННЯ -->
-<button id="switchBtn" class="top-btn" onclick="switchMode()">Увійти як адмін</button>
-
-<!-- ВИБІР РОЛІ (перший екран) -->
-<div id="roleSelect" class="box">
-  <h3>Хто ви?</h3>
-  <button onclick="enterGuest()">Гість</button>
-  <button onclick="showLogin()">Адмін</button>
-</div>
-
-<!-- ЛОГІН -->
-<div id="loginBox" class="box" style="display:none;">
-  <h3>Вхід для адміна</h3>
-  <input id="login" placeholder="Логін">
-  <input id="password" type="password" placeholder="Пароль">
-  <button onclick="loginAdmin()">Увійти</button>
-</div>
-
-<!-- ПОШУК -->
-<div id="searchBox" class="box" style="display:none;">
-  <input id="search" placeholder="Пошук..." oninput="renderPosts()">
-</div>
-
-<!-- АДМІН ПАНЕЛЬ -->
-<div id="adminPanel" class="box" style="display:none;">
-  <h3>Додати солодощі</h3>
-
-  <input id="title" placeholder="Назва">
-  <textarea id="desc" placeholder="Опис"></textarea>
-  <input id="price" placeholder="Ціна">
-  <input id="image" type="file">
-
-  <button onclick="addPost()">Додати 🍬</button>
-</div>
-
-<div id="posts"></div>
-
-<script>
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 let isAdmin = false;
-let posts = JSON.parse(localStorage.getItem("posts")) || [];
+let posts = [];
+
+// 🔄 ЗАВАНТАЖИТИ ТОВАРИ З FIREBASE
+async function loadPosts() {
+  const querySnapshot = await getDocs(collection(db, "posts"));
+  posts = [];
+
+  querySnapshot.forEach((docSnap) => {
+    posts.push({ id: docSnap.id, ...docSnap.data() });
+  });
+
+  renderPosts();
+}
 
 // ГІСТЬ
 function enterGuest() {
@@ -119,18 +34,11 @@ function enterGuest() {
   document.getElementById("roleSelect").style.display = "none";
   document.getElementById("loginBox").style.display = "none";
   document.getElementById("adminPanel").style.display = "none";
-
   document.getElementById("searchBox").style.display = "block";
 
   document.getElementById("switchBtn").innerText = "Увійти як адмін";
 
-  renderPosts();
-}
-
-// ПОКАЗАТИ ЛОГІН
-function showLogin() {
-  document.getElementById("roleSelect").style.display = "none";
-  document.getElementById("loginBox").style.display = "block";
+  loadPosts();
 }
 
 // ЛОГІН
@@ -147,7 +55,7 @@ function loginAdmin() {
 
     document.getElementById("switchBtn").innerText = "Вийти в гість";
 
-    renderPosts();
+    loadPosts();
   } else {
     alert("Неправильний логін або пароль");
   }
@@ -162,6 +70,12 @@ function switchMode() {
   }
 }
 
+// ПОКАЗ ЛОГІН
+function showLogin() {
+  document.getElementById("roleSelect").style.display = "none";
+  document.getElementById("loginBox").style.display = "block";
+}
+
 // РЕНДЕР
 function renderPosts() {
   const container = document.getElementById("posts");
@@ -171,7 +85,7 @@ function renderPosts() {
 
   posts
     .filter(p => p.title.toLowerCase().includes(search))
-    .forEach((p, index) => {
+    .forEach((p) => {
       const div = document.createElement("div");
       div.className = "post";
 
@@ -180,15 +94,15 @@ function renderPosts() {
         <p>${p.desc}</p>
         <b>${p.price} грн</b><br>
         ${p.image ? `<img src="${p.image}">` : ""}
-        ${isAdmin ? `<button onclick="deletePost(${index})">❌ Видалити</button>` : ""}
+        ${isAdmin ? `<button onclick="deletePost('${p.id}')">❌ Видалити</button>` : ""}
       `;
 
       container.appendChild(div);
     });
 }
 
-// ДОДАТИ
-function addPost() {
+// ДОДАТИ В FIREBASE
+async function addPost() {
   const title = document.getElementById("title").value;
   const desc = document.getElementById("desc").value;
   const price = document.getElementById("price").value;
@@ -199,32 +113,47 @@ function addPost() {
     return;
   }
 
+  let imageBase64 = null;
+
   if (file) {
     const reader = new FileReader();
-    reader.onload = function(e) {
-      savePost(title, desc, price, e.target.result);
+    reader.onload = async function(e) {
+      imageBase64 = e.target.result;
+
+      await addDoc(collection(db, "posts"), {
+        title,
+        desc,
+        price,
+        image: imageBase64
+      });
+
+      loadPosts();
     };
     reader.readAsDataURL(file);
   } else {
-    savePost(title, desc, price, null);
+    await addDoc(collection(db, "posts"), {
+      title,
+      desc,
+      price,
+      image: null
+    });
+
+    loadPosts();
   }
 }
 
-// ЗБЕРЕГТИ
-function savePost(title, desc, price, image) {
-  posts.push({ title, desc, price, image });
-  localStorage.setItem("posts", JSON.stringify(posts));
-  renderPosts();
+// ВИДАЛИТИ З FIREBASE
+async function deletePost(id) {
+  await deleteDoc(doc(db, "posts", id));
+  loadPosts();
 }
 
-// ВИДАЛИТИ
-function deletePost(index) {
-  posts.splice(index, 1);
-  localStorage.setItem("posts", JSON.stringify(posts));
-  renderPosts();
-}
+// зробити функції доступними глобально
+window.enterGuest = enterGuest;
+window.showLogin = showLogin;
+window.loginAdmin = loginAdmin;
+window.switchMode = switchMode;
+window.addPost = addPost;
+window.deletePost = deletePost;
 
 </script>
-
-</body>
-</html>
