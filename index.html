@@ -152,14 +152,22 @@ header {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+/* Firebase config */
 const firebaseConfig = {
   apiKey: "YOUR_KEY",
   authDomain: "YOUR_DOMAIN",
   projectId: "YOUR_ID",
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const appFirebase = initializeApp(firebaseConfig);
+const db = getFirestore(appFirebase);
+
+/* FIX DOM ACCESS */
+const authScreen = document.getElementById("authScreen");
+const adminLogin = document.getElementById("adminLogin");
+const appDiv = document.getElementById("app");
+const adminPanel = document.getElementById("adminPanel");
+const postsContainer = document.getElementById("posts");
 
 let isAdmin = false;
 
@@ -204,12 +212,12 @@ function loginAdmin() {
 
 function startApp() {
   authScreen.classList.add("hidden");
-  app.classList.remove("hidden");
+  appDiv.classList.remove("hidden");
 
   adminPanel.classList.toggle("hidden", !isAdmin);
 
-  roleTitle.innerText = isAdmin ? "Адмін" : "Гість";
-  roleInfo.innerText = isAdmin ? "Повний доступ" : "Перегляд";
+  document.getElementById("roleTitle").innerText = isAdmin ? "Адмін" : "Гість";
+  document.getElementById("roleInfo").innerText = isAdmin ? "Повний доступ" : "Перегляд";
 
   loadPosts();
 }
@@ -219,10 +227,10 @@ function logout() {
   location.reload();
 }
 
-/* POSTS */
+/* LOAD POSTS */
 async function loadPosts() {
   const snap = await getDocs(collection(db, "posts"));
-  posts.innerHTML = "";
+  postsContainer.innerHTML = "";
 
   snap.forEach(d => {
     const p = d.data();
@@ -239,13 +247,13 @@ async function loadPosts() {
       </div>
     `;
 
-    posts.appendChild(div);
+    postsContainer.appendChild(div);
   });
 }
 
 /* ADD POST */
 async function addPost() {
-  const file = image.files[0];
+  const file = document.getElementById("image").files[0];
   let imageUrl = "";
 
   if (file) {
@@ -263,19 +271,10 @@ async function addPost() {
       loadPosts();
     };
     reader.readAsDataURL(file);
-  } else {
-    await addDoc(collection(db, "posts"), {
-      title: title.value,
-      desc: desc.value,
-      price: price.value,
-      image: ""
-    });
-
-    loadPosts();
   }
 }
 
-/* GLOBAL */
+/* GLOBAL EXPORT */
 window.enterGuest = enterGuest;
 window.showAdminLogin = showAdminLogin;
 window.loginAdmin = loginAdmin;
