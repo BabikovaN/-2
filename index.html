@@ -50,21 +50,14 @@ header {
   padding: 15px;
   display: flex;
   justify-content: space-between;
-  align-items: center;
 }
 
-.container {
-  padding: 15px;
-}
-
-/* GRID */
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 10px;
 }
 
-/* LIST */
 .list {
   display: flex;
   flex-direction: column;
@@ -134,7 +127,6 @@ header {
 
 <div style="flex:1; padding:15px;">
 
-<!-- CONTROLS -->
 <div class="controls">
   <input id="search" placeholder="🔎 Пошук...">
 
@@ -145,7 +137,6 @@ header {
   </select>
 </div>
 
-<!-- ADMIN PANEL -->
 <div id="adminPanel" class="hidden">
   <h3>Адмін панель</h3>
 
@@ -184,7 +175,7 @@ import {
   updateDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* 🔥 Firebase config */
+/* Firebase */
 const firebaseConfig = {
   apiKey: "YOUR_KEY",
   authDomain: "YOUR_DOMAIN",
@@ -199,6 +190,11 @@ const authScreen = document.getElementById("authScreen");
 const appDiv = document.getElementById("app");
 const adminPanel = document.getElementById("adminPanel");
 const postsDiv = document.getElementById("posts");
+
+const title = document.getElementById("title");
+const desc = document.getElementById("desc");
+const price = document.getElementById("price");
+const image = document.getElementById("image");
 
 let isAdmin = false;
 let postsData = [];
@@ -284,13 +280,8 @@ function renderPosts() {
     );
   }
 
-  if (sortVal === "asc") {
-    data.sort((a,b)=>a.price-b.price);
-  }
-
-  if (sortVal === "desc") {
-    data.sort((a,b)=>b.price-a.price);
-  }
+  if (sortVal === "asc") data.sort((a,b)=>a.price-b.price);
+  if (sortVal === "desc") data.sort((a,b)=>b.price-a.price);
 
   postsDiv.innerHTML = "";
 
@@ -319,24 +310,48 @@ function renderPosts() {
 
 /* ADD */
 window.addPost = async () => {
-  const file = image.files[0];
-  let img = "";
+  try {
+    if (!title.value || !desc.value || !price.value) {
+      alert("❗ Заповни всі поля");
+      return;
+    }
 
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = async e => {
-      img = e.target.result;
+    const file = image.files[0];
+    let img = "";
 
+    if (file) {
+      const reader = new FileReader();
+
+      reader.onload = async e => {
+        img = e.target.result;
+
+        await addDoc(collection(db,"posts"), {
+          title: title.value,
+          desc: desc.value,
+          price: Number(price.value),
+          image: img
+        });
+
+        alert("✅ Додано!");
+        loadPosts();
+      };
+
+      reader.readAsDataURL(file);
+    } else {
       await addDoc(collection(db,"posts"), {
         title: title.value,
         desc: desc.value,
         price: Number(price.value),
-        image: img
+        image: ""
       });
 
+      alert("✅ Додано!");
       loadPosts();
-    };
-    reader.readAsDataURL(file);
+    }
+
+  } catch (e) {
+    console.error(e);
+    alert("❌ Помилка");
   }
 };
 
@@ -366,7 +381,7 @@ window.editPost = async (id) => {
   loadPosts();
 };
 
-/* VIEW TOGGLE */
+/* VIEW */
 window.toggleView = () => {
   viewMode = viewMode === "grid" ? "list" : "grid";
   postsDiv.className = viewMode;
