@@ -67,12 +67,28 @@ input, select, button, textarea {
   word-break: break-word;
 }
 
+/* ✅ покращене фото */
 .card img {
   width:100%;
-  height:120px;
+  height:160px;
   object-fit:cover;
   border-radius:10px;
   cursor:pointer;
+  transition: transform 0.2s;
+}
+
+.card img:active {
+  transform: scale(0.97);
+}
+
+@media (max-width: 600px) {
+  .card img {
+    height:200px;
+  }
+
+  .grid {
+    grid-template-columns: repeat(auto-fill,minmax(140px,1fr));
+  }
 }
 
 #modal {
@@ -192,7 +208,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let posts = [];
-let editId = null;
+let editId = null; // ✅ ДОДАНО
 let isAdmin = localStorage.getItem("admin")==="true";
 let view = "grid";
 
@@ -263,12 +279,36 @@ function render(){
       <h4>${p.title}</h4>
       <p>${p.desc}</p>
       <b>${p.price} грн</b>
+
+      ${isAdmin ? `
+        <div>
+          <button onclick="editPost('${p.id}')">✏️ Edit</button>
+        </div>
+      ` : ""}
     `;
 
     postsDiv.appendChild(div);
   });
 }
 
+/* ✅ EDIT */
+window.editPost = (id) => {
+  const p = posts.find(x => x.id === id);
+  if(!p) return;
+
+  title.value = p.title;
+  desc.value = p.desc;
+  price.value = p.price;
+
+  inst.value = p.inst || "";
+  tg.value = p.tg || "";
+  phone.value = p.phone || "";
+  email.value = p.email || "";
+
+  editId = id;
+};
+
+/* ADD + UPDATE */
 document.getElementById("addBtn").onclick = async ()=>{
 
   const files = images.files;
@@ -279,16 +319,31 @@ document.getElementById("addBtn").onclick = async ()=>{
     imgs.push(await toBase64(f));
   }
 
-  await addDoc(collection(db,"posts"), {
-    title:title.value,
-    desc:desc.value,
-    price:Number(price.value)||0,
-    images:imgs,
-    inst:inst.value,
-    tg:tg.value,
-    phone:phone.value,
-    email:email.value
-  });
+  if(editId){
+    await updateDoc(doc(db,"posts",editId), {
+      title:title.value,
+      desc:desc.value,
+      price:Number(price.value)||0,
+      images: imgs,
+      inst:inst.value,
+      tg:tg.value,
+      phone:phone.value,
+      email:email.value
+    });
+
+    editId = null;
+  } else {
+    await addDoc(collection(db,"posts"), {
+      title:title.value,
+      desc:desc.value,
+      price:Number(price.value)||0,
+      images:imgs,
+      inst:inst.value,
+      tg:tg.value,
+      phone:phone.value,
+      email:email.value
+    });
+  }
 
   loader.style.display="none";
 };
