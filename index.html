@@ -2,67 +2,56 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>🍩 Солодкий маркет</title>
+<title>Солодкий маркет 🍩</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body {
   font-family: Arial;
-  background: linear-gradient(to bottom, #ffe0f0, #fff8dc);
-  padding: 15px;
   margin: 0;
+  padding: 15px;
+  background: linear-gradient(135deg, #ffe0f0, #fff5cc);
 }
 
-h1 {
-  text-align: center;
-}
+h1 { text-align: center; }
 
-/* форма */
-.form {
+.box {
   background: white;
   padding: 15px;
   border-radius: 12px;
   margin-bottom: 20px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
 input, textarea {
   width: 100%;
   padding: 10px;
-  margin-top: 5px;
+  margin-top: 8px;
   border-radius: 8px;
-  border: 1px solid #ccc;
 }
 
 button {
   margin-top: 10px;
   padding: 12px;
-  width: 100%;
   border: none;
-  background: #ff69b4;
+  background: #ff6fa5;
   color: white;
   border-radius: 8px;
   cursor: pointer;
+  width: 100%;
 }
 
-/* картки */
-.card {
+.post {
   background: white;
-  padding: 12px;
+  padding: 10px;
   border-radius: 12px;
   margin-top: 10px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
-.price {
-  color: green;
-  font-weight: bold;
-}
-
-.delete {
-  background: red;
-  margin-top: 5px;
+.post img {
+  width: 100%;
+  max-width: 200px;
+  border-radius: 10px;
 }
 </style>
 </head>
@@ -71,12 +60,34 @@ button {
 
 <h1>🍩 Солодкий маркет</h1>
 
-<div class="form">
-  <h3>Додати товар</h3>
+<!-- ВИБІР РОЛІ -->
+<div id="roleSelect" class="box">
+  <h3>Хто ви?</h3>
+  <button onclick="enterGuest()">Гість</button>
+  <button onclick="showLogin()">Адмін</button>
+</div>
 
-  <input id="title" placeholder="Назва (пончик, печиво...)">
+<!-- ЛОГІН -->
+<div id="loginBox" class="box" style="display:none;">
+  <h3>Вхід для адміна</h3>
+  <input id="login" placeholder="Логін">
+  <input id="password" type="password" placeholder="Пароль">
+  <button onclick="loginAdmin()">Увійти</button>
+</div>
+
+<!-- ПОШУК -->
+<div id="searchBox" class="box" style="display:none;">
+  <input id="search" placeholder="Пошук..." oninput="renderPosts()">
+</div>
+
+<!-- ФОРМА ДЛЯ АДМІНА -->
+<div id="adminPanel" class="box" style="display:none;">
+  <h3>Додати солодощі</h3>
+
+  <input id="title" placeholder="Назва">
   <textarea id="desc" placeholder="Опис"></textarea>
-  <input id="price" placeholder="Ціна (грн)">
+  <input id="price" placeholder="Ціна">
+  <input id="image" type="file">
 
   <button onclick="addPost()">Додати 🍬</button>
 </div>
@@ -85,58 +96,103 @@ button {
 
 <script>
 
+let isAdmin = false;
 let posts = JSON.parse(localStorage.getItem("posts")) || [];
 
-function renderPosts() {
-  const container = document.getElementById("posts");
-  container.innerHTML = "";
-
-  posts.forEach((post, index) => {
-    const div = document.createElement("div");
-    div.className = "card";
-
-    div.innerHTML = `
-      <h3>${post.title}</h3>
-      <p>${post.desc}</p>
-      <div class="price">${post.price} грн</div>
-      <button class="delete" onclick="deletePost(${index})">❌ Видалити</button>
-    `;
-
-    container.appendChild(div);
-  });
+// ГІСТЬ
+function enterGuest() {
+  document.getElementById("roleSelect").style.display = "none";
+  document.getElementById("searchBox").style.display = "block";
+  renderPosts();
 }
 
+// ПОКАЗАТИ ЛОГІН
+function showLogin() {
+  document.getElementById("roleSelect").style.display = "none";
+  document.getElementById("loginBox").style.display = "block";
+}
+
+// ЛОГІН АДМІНА
+function loginAdmin() {
+  const login = document.getElementById("login").value;
+  const password = document.getElementById("password").value;
+
+  if (login === "Nastuhsa" && password === "Babikovf") {
+    isAdmin = true;
+
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("adminPanel").style.display = "block";
+    document.getElementById("searchBox").style.display = "block";
+
+    renderPosts();
+  } else {
+    alert("Неправильний логін або пароль");
+  }
+}
+
+// ВІДОБРАЖЕННЯ
+function renderPosts() {
+  const container = document.getElementById("posts");
+  const search = document.getElementById("search")?.value?.toLowerCase() || "";
+
+  container.innerHTML = "";
+
+  posts
+    .filter(p => p.title.toLowerCase().includes(search))
+    .forEach((p, index) => {
+      const div = document.createElement("div");
+      div.className = "post";
+
+      div.innerHTML = `
+        <h3>${p.title}</h3>
+        <p>${p.desc}</p>
+        <b>${p.price} грн</b><br>
+        ${p.image ? `<img src="${p.image}">` : ""}
+        ${isAdmin ? `<button onclick="deletePost(${index})">❌ Видалити</button>` : ""}
+      `;
+
+      container.appendChild(div);
+    });
+}
+
+// ДОДАТИ
 function addPost() {
   const title = document.getElementById("title").value;
   const desc = document.getElementById("desc").value;
   const price = document.getElementById("price").value;
+  const file = document.getElementById("image").files[0];
 
   if (!title || !price) {
-    alert("Заповни назву і ціну!");
+    alert("Заповни назву і ціну");
     return;
   }
 
-  posts.unshift({ title, desc, price });
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      savePost(title, desc, price, e.target.result);
+    };
+    reader.readAsDataURL(file);
+  } else {
+    savePost(title, desc, price, null);
+  }
+}
 
+// ЗБЕРЕГТИ
+function savePost(title, desc, price, image) {
+  posts.push({ title, desc, price, image });
   localStorage.setItem("posts", JSON.stringify(posts));
-
-  document.getElementById("title").value = "";
-  document.getElementById("desc").value = "";
-  document.getElementById("price").value = "";
-
   renderPosts();
 }
 
+// ВИДАЛИТИ
 function deletePost(index) {
   posts.splice(index, 1);
   localStorage.setItem("posts", JSON.stringify(posts));
   renderPosts();
 }
 
-renderPosts();
-
 </script>
 
 </body>
 </html>
-
