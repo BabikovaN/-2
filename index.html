@@ -96,8 +96,11 @@ input, select, button, textarea {
   position:absolute;
   top:50%;
   transform:translateY(-50%);
-  font-size:24px;
+  font-size:22px;
   background: rgba(255,255,255,0.3);
+  border:none;
+  padding:10px;
+  border-radius:8px;
 }
 
 #prevBtn { left:10px; }
@@ -159,9 +162,9 @@ input, select, button, textarea {
 <div id="posts" class="grid"></div>
 
 <div id="modal" onclick="closeModal()">
-  <button id="prevBtn">⬅️</button>
+  <button id="prevBtn" onclick="event.stopPropagation()">⬅️</button>
   <img id="modalImg">
-  <button id="nextBtn">➡️</button>
+  <button id="nextBtn" onclick="event.stopPropagation()">➡️</button>
 </div>
 
 <script type="module">
@@ -196,7 +199,35 @@ let view = "grid";
 let currentImages = [];
 let currentIndex = 0;
 
-/* LOAD */
+const postsDiv = document.getElementById("posts");
+const loader = document.getElementById("loader");
+const adminPanel = document.getElementById("adminPanel");
+const loginBox = document.getElementById("loginBox");
+
+document.getElementById("adminBtn").onclick = () => {
+  loginBox.style.display = "block";
+};
+
+window.loginAdmin = () => {
+  const l = login.value;
+  const p = password.value;
+
+  if(l==="admin" && p==="1234"){
+    localStorage.setItem("admin","true");
+    isAdmin = true;
+    adminPanel.style.display="block";
+    loginBox.style.display="none";
+    render();
+  } else alert("❌ Невірно");
+};
+
+window.logout = () => {
+  localStorage.removeItem("admin");
+  isAdmin = false;
+  adminPanel.style.display="none";
+  render();
+};
+
 function load(){
   onSnapshot(collection(db,"posts"), snap=>{
     posts = [];
@@ -205,20 +236,18 @@ function load(){
   });
 }
 
-/* RENDER */
 function render(){
   postsDiv.className = view;
 
   let filtered = [...posts];
 
-  const search = document.getElementById("search").value.toLowerCase();
-  if(search){
-    filtered = filtered.filter(p=>p.title.toLowerCase().includes(search));
+  const searchVal = search.value.toLowerCase();
+  if(searchVal){
+    filtered = filtered.filter(p=>p.title.toLowerCase().includes(searchVal));
   }
 
-  const sort = document.getElementById("sort").value;
-  if(sort==="asc") filtered.sort((a,b)=>a.price-b.price);
-  if(sort==="desc") filtered.sort((a,b)=>b.price-a.price);
+  if(sort.value==="asc") filtered.sort((a,b)=>a.price-b.price);
+  if(sort.value==="desc") filtered.sort((a,b)=>b.price-a.price);
 
   postsDiv.innerHTML="";
 
@@ -240,41 +269,42 @@ function render(){
   });
 }
 
-/* MODAL */
+document.getElementById("addBtn").onclick = async ()=>{
+
+  const files = images.files;
+
+  let imgs = [];
+
+  for(let f of files){
+    imgs.push(await toBase64(f));
+  }
+
+  await addDoc(collection(db,"posts"), {
+    title:title.value,
+    desc:desc.value,
+    price:Number(price.value)||0,
+    images:imgs,
+    inst:inst.value,
+    tg:tg.value,
+    phone:phone.value,
+    email:email.value
+  });
+
+  loader.style.display="none";
+};
+
 window.openModal=(images)=>{
   currentImages = images;
   currentIndex = 0;
-
-  const modal = document.getElementById("modal");
-  const modalImg = document.getElementById("modalImg");
 
   modal.style.display="flex";
   modalImg.src=currentImages[0];
 };
 
 window.closeModal=()=>{
-  document.getElementById("modal").style.display="none";
+  modal.style.display="none";
 };
 
-/* SWIPE */
-let startX=0;
-
-modal.addEventListener("touchstart",(e)=>{
-  if(e.touches.length===1){
-    startX=e.touches[0].clientX;
-  }
-});
-
-modal.addEventListener("touchend",(e)=>{
-  let diff = startX - e.changedTouches[0].clientX;
-
-  if(Math.abs(diff)>50){
-    if(diff>0) nextImage();
-    else prevImage();
-  }
-});
-
-/* BUTTONS */
 document.getElementById("prevBtn").onclick=(e)=>{
   e.stopPropagation();
   prevImage();
@@ -297,32 +327,21 @@ function prevImage(){
   modalImg.src=currentImages[currentIndex];
 }
 
-/* ADD */
-document.getElementById("addBtn").onclick = async ()=>{
+let startX=0;
 
-  const files = document.getElementById("images").files;
+modal.addEventListener("touchstart",(e)=>{
+  startX = e.touches[0].clientX;
+});
 
-  let imgs = [];
+modal.addEventListener("touchend",(e)=>{
+  let diff = startX - e.changedTouches[0].clientX;
 
-  for(let f of files){
-    imgs.push(await toBase64(f));
+  if(Math.abs(diff)>50){
+    if(diff>0) nextImage();
+    else prevImage();
   }
+});
 
-  await addDoc(collection(db,"posts"), {
-    title:title.value,
-    desc:desc.value,
-    price:Number(price.value)||0,
-    images:imgs,
-    inst:inst.value,
-    tg:tg.value,
-    phone:phone.value,
-    email:email.value
-  });
-
-  loader.style.display="none";
-};
-
-/* UTILS */
 function toBase64(file){
   return new Promise(res=>{
     const r=new FileReader();
@@ -331,8 +350,23 @@ function toBase64(file){
   });
 }
 
-/* INIT */
+window.toggleView=()=>{
+  view = view==="grid"?"list":"grid";
+  render();
+};
+
+window.toggleTheme=()=>{
+  document.body.classList.toggle("dark");
+};
+
+search.oninput=render;
+sort.onchange=render;
+
 window.onload=()=>{
+  if(localStorage.getItem("admin")==="true"){
+    isAdmin=true;
+    adminPanel.style.display="block";
+  }
   load();
 };
 </script>
