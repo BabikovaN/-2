@@ -25,7 +25,6 @@ body {
   color: var(--text);
 }
 
-/* HEADER */
 header {
   padding: 10px;
   display:flex;
@@ -33,7 +32,6 @@ header {
   background:#9fd3ff;
 }
 
-/* CONTROLS */
 .controls {
   padding:10px;
   display:flex;
@@ -47,7 +45,6 @@ input, select, button {
   border:none;
 }
 
-/* GRID / LIST */
 .grid {
   display:grid;
   grid-template-columns: repeat(auto-fill,minmax(180px,1fr));
@@ -60,7 +57,6 @@ input, select, button {
   padding:10px;
 }
 
-/* CARD */
 .card {
   background: var(--card);
   padding:10px;
@@ -75,7 +71,6 @@ input, select, button {
   border-radius:10px;
 }
 
-/* MODAL IMAGE */
 #modal {
   position:fixed;
   top:0;
@@ -93,7 +88,6 @@ input, select, button {
   max-height:90%;
 }
 
-/* LOADER */
 #loader {
   display:none;
 }
@@ -105,10 +99,19 @@ input, select, button {
 <header>
   <div>🍬 Shop</div>
   <div>
+    <button id="adminBtn">🔐 Admin</button>
     <button onclick="toggleTheme()">🌗</button>
     <button onclick="logout()">🚪</button>
   </div>
 </header>
+
+<!-- LOGIN -->
+<div id="loginBox" style="display:none; padding:10px;">
+  <h3>Вхід в адмін</h3>
+  <input id="login" placeholder="Логін">
+  <input id="password" type="password" placeholder="Пароль">
+  <button onclick="loginAdmin()">Увійти</button>
+</div>
 
 <div class="controls">
   <input id="search" placeholder="Пошук...">
@@ -175,6 +178,49 @@ let view = "grid";
 /* ELEMENTS */
 const postsDiv = document.getElementById("posts");
 const loader = document.getElementById("loader");
+const adminPanel = document.getElementById("adminPanel");
+const loginBox = document.getElementById("loginBox");
+const adminBtn = document.getElementById("adminBtn");
+
+/* ADMIN BUTTON */
+adminBtn.onclick = () => {
+  loginBox.style.display = "block";
+};
+
+/* LOGIN */
+window.loginAdmin = () => {
+  const l = document.getElementById("login").value;
+  const p = document.getElementById("password").value;
+
+  if (l === "admin" && p === "1234") {
+    localStorage.setItem("admin","true");
+    isAdmin = true;
+    adminPanel.style.display = "block";
+    loginBox.style.display = "none";
+    render();
+  } else {
+    alert("❌ Невірний логін");
+  }
+};
+
+/* LOGOUT */
+window.logout = () => {
+  localStorage.removeItem("admin");
+  isAdmin = false;
+  adminPanel.style.display = "none";
+  render();
+};
+
+/* INIT */
+window.onload = () => {
+  if (localStorage.getItem("admin") === "true") {
+    isAdmin = true;
+    adminPanel.style.display = "block";
+  } else {
+    adminPanel.style.display = "none";
+  }
+  load();
+};
 
 /* LOAD */
 async function load() {
@@ -188,20 +234,9 @@ async function load() {
 function render() {
   postsDiv.className = view;
 
-  let filtered = [...posts];
+  postsDiv.innerHTML = "";
 
-  const search = document.getElementById("search").value.toLowerCase();
-  if(search){
-    filtered = filtered.filter(p=>p.title.toLowerCase().includes(search));
-  }
-
-  const sort = document.getElementById("sort").value;
-  if(sort==="asc") filtered.sort((a,b)=>a.price-b.price);
-  if(sort==="desc") filtered.sort((a,b)=>b.price-a.price);
-
-  postsDiv.innerHTML="";
-
-  filtered.forEach(p=>{
+  posts.forEach(p=>{
     const div=document.createElement("div");
     div.className="card";
 
@@ -232,6 +267,7 @@ function render() {
 
 /* ADD */
 document.getElementById("addBtn").onclick = async ()=>{
+
   const files = document.getElementById("images").files;
 
   if(!title.value || !price.value){
@@ -333,13 +369,6 @@ window.toggleTheme=()=>{
 search.oninput=render;
 sort.onchange=render;
 
-/* LOGOUT */
-window.logout=()=>{
-  localStorage.removeItem("admin");
-  location.reload();
-};
-
-/* INIT */
 load();
 </script>
 
