@@ -1,3 +1,104 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<title>Солодкий маркет 🍩</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  font-family: Arial;
+  margin: 0;
+  padding: 15px;
+  background: linear-gradient(135deg, #ffe0f0, #fff5cc);
+}
+
+h1 { text-align: center; }
+
+.top-btn {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  padding: 8px 12px;
+}
+
+.box {
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+input, textarea {
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  border-radius: 8px;
+}
+
+button {
+  margin-top: 10px;
+  padding: 12px;
+  border: none;
+  background: #ff6fa5;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.post {
+  background: white;
+  padding: 10px;
+  border-radius: 12px;
+  margin-top: 10px;
+}
+
+.post img {
+  width: 100%;
+  max-width: 200px;
+  border-radius: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🍩 Солодкий маркет</h1>
+
+<button id="switchBtn" class="top-btn" onclick="switchMode()">Увійти як адмін</button>
+
+<div id="roleSelect" class="box">
+  <h3>Хто ви?</h3>
+  <button onclick="enterGuest()">Гість</button>
+  <button onclick="showLogin()">Адмін</button>
+</div>
+
+<div id="loginBox" class="box" style="display:none;">
+  <h3>Вхід для адміна</h3>
+  <input id="login" placeholder="Логін">
+  <input id="password" type="password" placeholder="Пароль">
+  <button onclick="loginAdmin()">Увійти</button>
+</div>
+
+<div id="searchBox" class="box" style="display:none;">
+  <input id="search" placeholder="Пошук..." oninput="renderPosts()">
+</div>
+
+<div id="adminPanel" class="box" style="display:none;">
+  <h3>Додати товар</h3>
+
+  <input id="title" placeholder="Назва">
+  <textarea id="desc" placeholder="Опис"></textarea>
+  <input id="price" placeholder="Ціна">
+  <input id="image" type="file">
+
+  <button onclick="addPost()">Додати 🍬</button>
+</div>
+
+<div id="posts"></div>
+
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -15,7 +116,7 @@ const db = getFirestore(app);
 let isAdmin = false;
 let posts = [];
 
-// 🔄 ЗАВАНТАЖИТИ ТОВАРИ З FIREBASE
+// 🔄 LOAD DATA
 async function loadPosts() {
   const querySnapshot = await getDocs(collection(db, "posts"));
   posts = [];
@@ -27,7 +128,7 @@ async function loadPosts() {
   renderPosts();
 }
 
-// ГІСТЬ
+// 👤 GUEST
 function enterGuest() {
   isAdmin = false;
 
@@ -41,7 +142,7 @@ function enterGuest() {
   loadPosts();
 }
 
-// ЛОГІН
+// 🔐 LOGIN
 function loginAdmin() {
   const login = document.getElementById("login").value;
   const password = document.getElementById("password").value;
@@ -61,7 +162,7 @@ function loginAdmin() {
   }
 }
 
-// ПЕРЕМИКАННЯ
+// 🔁 SWITCH
 function switchMode() {
   if (isAdmin) {
     enterGuest();
@@ -70,13 +171,13 @@ function switchMode() {
   }
 }
 
-// ПОКАЗ ЛОГІН
+// 🔐 SHOW LOGIN
 function showLogin() {
   document.getElementById("roleSelect").style.display = "none";
   document.getElementById("loginBox").style.display = "block";
 }
 
-// РЕНДЕР
+// 🧾 RENDER
 function renderPosts() {
   const container = document.getElementById("posts");
   const search = document.getElementById("search")?.value?.toLowerCase() || "";
@@ -101,7 +202,7 @@ function renderPosts() {
     });
 }
 
-// ДОДАТИ В FIREBASE
+// ➕ ADD
 async function addPost() {
   const title = document.getElementById("title").value;
   const desc = document.getElementById("desc").value;
@@ -142,13 +243,13 @@ async function addPost() {
   }
 }
 
-// ВИДАЛИТИ З FIREBASE
+// ❌ DELETE
 async function deletePost(id) {
   await deleteDoc(doc(db, "posts", id));
   loadPosts();
 }
 
-// зробити функції доступними глобально
+// expose
 window.enterGuest = enterGuest;
 window.showLogin = showLogin;
 window.loginAdmin = loginAdmin;
@@ -156,4 +257,13 @@ window.switchMode = switchMode;
 window.addPost = addPost;
 window.deletePost = deletePost;
 
+// ✅ AUTO START
+window.addEventListener("DOMContentLoaded", () => {
+  loadPosts();
+  enterGuest();
+});
+
 </script>
+
+</body>
+</html>
