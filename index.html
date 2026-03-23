@@ -151,7 +151,7 @@ input, select, button, textarea {
 </div>
 
 <script>
-let posts = [];
+let posts = JSON.parse(localStorage.getItem("posts")||"[]");
 let editId = null;
 let isAdmin = localStorage.getItem("admin")==="true";
 let view="grid";
@@ -161,6 +161,7 @@ const postsDiv = document.getElementById("posts");
 const searchInput = document.getElementById("search");
 const adminPanel = document.getElementById("adminPanel");
 const loginBox = document.getElementById("loginBox");
+const sort = document.getElementById("sort");
 
 document.getElementById("adminBtn").onclick = ()=>{ loginBox.style.display="block"; };
 
@@ -186,20 +187,38 @@ window.logout = ()=>{
 document.getElementById("addBtn").onclick = ()=>{
   const imgs = [];
   for(let f of images.files){
-    const reader = new FileReader();
-    reader.onload=(e)=>{ imgs.push(e.target.result); render(); };
-    reader.readAsDataURL(f);
+    const url = URL.createObjectURL(f);
+    imgs.push(url);
   }
-  posts.push({
-    title:title.value,
-    desc:desc.value,
-    price:Number(price.value)||0,
-    images: imgs,
-    inst:inst.value,
-    tg:tg.value,
-    phone:phone.value,
-    email:email.value
-  });
+
+  if(editId){
+    const p = posts.find(x=>x.title===editId);
+    if(p){
+      p.title = title.value;
+      p.desc = desc.value;
+      p.price = Number(price.value)||0;
+      if(imgs.length) p.images = imgs;
+      p.inst = inst.value;
+      p.tg = tg.value;
+      p.phone = phone.value;
+      p.email = email.value;
+    }
+    editId=null;
+  } else {
+    posts.push({
+      title:title.value,
+      desc:desc.value,
+      price:Number(price.value)||0,
+      images: imgs,
+      inst:inst.value,
+      tg:tg.value,
+      phone:phone.value,
+      email:email.value
+    });
+  }
+
+  localStorage.setItem("posts", JSON.stringify(posts));
+
   title.value=desc.value=price.value=inst.value=tg.value=phone.value=email.value="";
   images.value="";
   render();
@@ -259,6 +278,7 @@ window.editPost=(title)=>{
 window.deletePost=(title)=>{
   if(confirm("Видалити цей пост?")){
     posts = posts.filter(p=>p.title!==title);
+    localStorage.setItem("posts", JSON.stringify(posts));
     render();
   }
 };
