@@ -3,61 +3,52 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shop</title>
-
+<title>Shop Local</title>
 <style>
 :root {
   --bg: #eaf6ff;
   --card: white;
   --text: #333;
 }
-
 body.dark {
   --bg: #1e2a36;
   --card: #2a3a4a;
   --text: #fff;
 }
-
 body {
-  margin: 0;
-  font-family: Arial;
+  margin:0;
+  font-family:Arial;
   background: var(--bg);
   color: var(--text);
 }
-
 header {
-  padding: 10px;
+  padding:10px;
   display:flex;
   justify-content:space-between;
   background:#9fd3ff;
   flex-wrap:wrap;
 }
-
 .controls {
   padding:10px;
   display:flex;
   gap:5px;
   flex-wrap:wrap;
 }
-
 input, select, button, textarea {
   padding:8px;
   border-radius:8px;
   border:none;
 }
-
 .grid {
   display:grid;
   grid-template-columns: repeat(auto-fill,minmax(180px,1fr));
   gap:10px;
   padding:10px;
 }
-
 .list {
   display:block;
   padding:10px;
 }
-
 .card {
   background: var(--card);
   padding:10px;
@@ -66,7 +57,6 @@ input, select, button, textarea {
   overflow-wrap: break-word;
   word-break: break-word;
 }
-
 .card img {
   width:100%;
   height:160px;
@@ -75,38 +65,26 @@ input, select, button, textarea {
   cursor:pointer;
   transition: transform 0.2s;
 }
-
 .card img:active {
   transform: scale(0.97);
 }
-
 @media (max-width: 600px) {
-  .card img {
-    height:200px;
-  }
-
-  .grid {
-    grid-template-columns: repeat(auto-fill,minmax(140px,1fr));
-  }
+  .card img { height:200px; }
+  .grid { grid-template-columns: repeat(auto-fill,minmax(140px,1fr)); }
 }
-
 #modal {
   position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
+  top:0; left:0;
+  width:100%; height:100%;
   background:black;
   display:none;
   justify-content:center;
   align-items:center;
 }
-
 #modal img {
   max-width:90%;
   max-height:90%;
 }
-
 #modal button {
   position:absolute;
   top:50%;
@@ -117,61 +95,22 @@ input, select, button, textarea {
   padding:10px;
   border-radius:8px;
 }
-
 #prevBtn { left:10px; }
 #nextBtn { right:10px; }
-
-#loader {
-  display:none;
-}
 </style>
 </head>
-
 <body>
 
 <header>
   <div>🍬 Shop</div>
   <div>
-    <button id="adminBtn">🔐 Admin</button>
     <button onclick="toggleTheme()">🌗</button>
-    <button onclick="logout()">🚪</button>
+    <button onclick="toggleView()">🔘 Grid/List</button>
   </div>
 </header>
 
-<div id="loginBox" style="display:none; padding:10px;">
-  <h3>Вхід адміна</h3>
-  <input id="login" placeholder="Логін">
-  <input id="password" type="password" placeholder="Пароль">
-  <button onclick="loginAdmin()">Увійти</button>
-</div>
-
 <div class="controls">
   <input id="search" placeholder="Пошук...">
-  <select id="sort">
-    <option value="">Сортування</option>
-    <option value="asc">Ціна ↑</option>
-    <option value="desc">Ціна ↓</option>
-  </select>
-
-  <button onclick="toggleView()">🔘 Grid/List</button>
-</div>
-
-<div id="adminPanel" style="padding:10px; display:none;">
-  <h3>Адмін</h3>
-
-  <input id="title" placeholder="Назва">
-  <input id="price" placeholder="Ціна">
-  <textarea id="desc" placeholder="Опис"></textarea>
-
-  <input type="file" id="images" multiple>
-
-  <input id="inst" placeholder="Instagram">
-  <input id="tg" placeholder="Telegram">
-  <input id="phone" placeholder="Phone">
-  <input id="email" placeholder="Email">
-
-  <button id="addBtn">Додати</button>
-  <div id="loader">⏳ Завантаження...</div>
 </div>
 
 <div id="posts" class="grid"></div>
@@ -182,255 +121,90 @@ input, select, button, textarea {
   <button id="nextBtn" onclick="event.stopPropagation()">➡️</button>
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  deleteDoc,
-  doc,
-  updateDoc,
-  onSnapshot
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+<script>
+let posts = [
+  {
+    title:"Пончик",
+    desc:"Смачний пончик з кремом",
+    price:15,
+    images:["https://cdn.freecodecamp.org/curriculum/cat-photo-app/cats.jpg"]
+  },
+  {
+    title:"Кекс",
+    desc:"Шоколадний кекс",
+    price:20,
+    images:["https://images.unsplash.com/photo-1565958011700-44c6319d0c4a"]
+  },
+  {
+    title:"Морозиво",
+    desc:"Ванільне морозиво",
+    price:25,
+    images:["https://images.unsplash.com/photo-1551024601-bec78aea704b"]
+  }
+];
 
-const firebaseConfig = {
-  apiKey: "AIzaSyD5oRMuZ9-HWC2phcBhiURBlUiHvUJTKak",
-  authDomain: "sweet-market-9c94e.firebaseapp.com",
-  projectId: "sweet-market-9c94e",
-  storageBucket: "sweet-market-9c94e.firebasestorage.app",
-  messagingSenderId: "583966719717",
-  appId: "1:583966719717:web:f16675f96d95fa83b19e0c"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-let posts = [];
-let editId = null;
-let isAdmin = localStorage.getItem("admin")==="true";
-let view = "grid";
-
-let currentImages = [];
-let currentIndex = 0;
+let view="grid";
+let currentImages=[], currentIndex=0;
 
 const postsDiv = document.getElementById("posts");
-const loader = document.getElementById("loader");
-const adminPanel = document.getElementById("adminPanel");
-const loginBox = document.getElementById("loginBox");
-
-document.getElementById("adminBtn").onclick = () => {
-  loginBox.style.display = "block";
-};
-
-window.loginAdmin = () => {
-  const l = login.value;
-  const p = password.value;
-
-  if(l==="admin" && p==="1234"){
-    localStorage.setItem("admin","true");
-    isAdmin = true;
-    adminPanel.style.display="block";
-    loginBox.style.display="none";
-    render();
-  } else alert("❌ Невірно");
-};
-
-window.logout = () => {
-  localStorage.removeItem("admin");
-  isAdmin = false;
-  adminPanel.style.display="none";
-  render();
-};
-
-function load(){
-  onSnapshot(collection(db,"posts"), snap=>{
-    posts = [];
-    snap.forEach(d=>posts.push({id:d.id,...d.data()}));
-    render();
-  });
-}
+const searchInput = document.getElementById("search");
 
 function render(){
-  postsDiv.className = view;
-
+  postsDiv.className=view;
   let filtered = [...posts];
-
-  const searchVal = search.value.toLowerCase();
-  if(searchVal){
-    filtered = filtered.filter(p=>p.title.toLowerCase().includes(searchVal));
-  }
-
-  if(sort.value==="asc") filtered.sort((a,b)=>a.price-b.price);
-  if(sort.value==="desc") filtered.sort((a,b)=>b.price-a.price);
+  const searchVal = searchInput.value.toLowerCase();
+  if(searchVal) filtered = filtered.filter(p=>p.title.toLowerCase().includes(searchVal));
 
   postsDiv.innerHTML="";
-
   filtered.forEach(p=>{
     const div=document.createElement("div");
     div.className="card";
-
-    const imgs = p.images || [];
-    const img = imgs[0] || "";
-
+    const img = p.images[0]||"";
     div.innerHTML=`
-      ${img?`<img src="${img}" onclick='openModal(${JSON.stringify(imgs)})'>`:""}
+      ${img?`<img src="${img}" onclick='openModal(${JSON.stringify(p.images)})'>`:""}
       <h4>${p.title}</h4>
       <p>${p.desc}</p>
       <b>${p.price} грн</b>
-
-      ${isAdmin ? `
-        <div style="margin-top:8px; display:flex; gap:5px;">
-          <button onclick="editPost('${p.id}')">✏️ Edit</button>
-          <button onclick="deletePost('${p.id}')">🗑 Delete</button>
-        </div>
-      ` : ""}
     `;
-
     postsDiv.appendChild(div);
   });
 }
 
-/* EDIT */
-window.editPost = (id) => {
-  const p = posts.find(x => x.id === id);
-  if(!p) return;
+function toggleView(){
+  view = view==="grid"?"list":"grid";
+  render();
+}
 
-  title.value = p.title;
-  desc.value = p.desc;
-  price.value = p.price;
+function toggleTheme(){
+  document.body.classList.toggle("dark");
+}
 
-  inst.value = p.inst || "";
-  tg.value = p.tg || "";
-  phone.value = p.phone || "";
-  email.value = p.email || "";
-
-  editId = id;
-};
-
-/* DELETE */
-window.deletePost = async (id) => {
-  if(confirm("Видалити цей пост?")){
-    await deleteDoc(doc(db,"posts",id));
-  }
-};
-
-/* ADD + UPDATE */
-document.getElementById("addBtn").onclick = async ()=>{
-
-  const files = images.files;
-
-  let imgs = [];
-
-  for(let f of files){
-    imgs.push(await toBase64(f));
-  }
-
-  if(editId){
-    await updateDoc(doc(db,"posts",editId), {
-      title:title.value,
-      desc:desc.value,
-      price:Number(price.value)||0,
-      images: imgs,
-      inst:inst.value,
-      tg:tg.value,
-      phone:phone.value,
-      email:email.value
-    });
-
-    editId = null;
-  } else {
-    await addDoc(collection(db,"posts"), {
-      title:title.value,
-      desc:desc.value,
-      price:Number(price.value)||0,
-      images:imgs,
-      inst:inst.value,
-      tg:tg.value,
-      phone:phone.value,
-      email:email.value
-    });
-  }
-
-  loader.style.display="none";
-};
-
-window.openModal=(images)=>{
+function openModal(images){
   currentImages = images;
-  currentIndex = 0;
-
+  currentIndex=0;
   modal.style.display="flex";
   modalImg.src=currentImages[0];
-};
+}
 
-window.closeModal=()=>{
+function closeModal(){
   modal.style.display="none";
-};
+}
 
 document.getElementById("prevBtn").onclick=(e)=>{
   e.stopPropagation();
-  prevImage();
-};
-
-document.getElementById("nextBtn").onclick=(e)=>{
-  e.stopPropagation();
-  nextImage();
-};
-
-function nextImage(){
-  if(!currentImages.length) return;
-  currentIndex = (currentIndex+1)%currentImages.length;
-  modalImg.src=currentImages[currentIndex];
-}
-
-function prevImage(){
-  if(!currentImages.length) return;
   currentIndex = (currentIndex-1+currentImages.length)%currentImages.length;
   modalImg.src=currentImages[currentIndex];
 }
 
-let startX=0;
-
-modal.addEventListener("touchstart",(e)=>{
-  startX = e.touches[0].clientX;
-});
-
-modal.addEventListener("touchend",(e)=>{
-  let diff = startX - e.changedTouches[0].clientX;
-
-  if(Math.abs(diff)>50){
-    if(diff>0) nextImage();
-    else prevImage();
-  }
-});
-
-function toBase64(file){
-  return new Promise(res=>{
-    const r=new FileReader();
-    r.onload=()=>res(r.result);
-    r.readAsDataURL(file);
-  });
+document.getElementById("nextBtn").onclick=(e)=>{
+  e.stopPropagation();
+  currentIndex = (currentIndex+1)%currentImages.length;
+  modalImg.src=currentImages[currentIndex];
 }
 
-window.toggleView=()=>{
-  view = view==="grid"?"list":"grid";
-  render();
-};
+searchInput.oninput=render;
 
-window.toggleTheme=()=>{
-  document.body.classList.toggle("dark");
-};
-
-search.oninput=render;
-sort.onchange=render;
-
-window.onload=()=>{
-  if(localStorage.getItem("admin")==="true"){
-    isAdmin=true;
-    adminPanel.style.display="block";
-  }
-  load();
-};
+window.onload=render;
 </script>
 
 </body>
