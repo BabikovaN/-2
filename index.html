@@ -5,101 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Shop</title>
 <style>
-:root {
-  --bg: #eaf6ff;
-  --card: white;
-  --text: #333;
-}
-body.dark {
-  --bg: #1e2a36;
-  --card: #2a3a4a;
-  --text: #fff;
-}
-body {
-  margin:0;
-  font-family:Arial;
-  background: var(--bg);
-  color: var(--text);
-}
-header {
-  padding:10px;
-  display:flex;
-  justify-content:space-between;
-  background:#9fd3ff;
-  flex-wrap:wrap;
-}
-.controls {
-  padding:10px;
-  display:flex;
-  gap:5px;
-  flex-wrap:wrap;
-}
-input, select, button, textarea {
-  padding:8px;
-  border-radius:8px;
-  border:none;
-}
-.grid {
-  display:grid;
-  grid-template-columns: repeat(auto-fill,minmax(180px,1fr));
-  gap:10px;
-  padding:10px;
-}
-.list {
-  display:block;
-  padding:10px;
-}
-.card {
-  background: var(--card);
-  padding:10px;
-  border-radius:12px;
-  box-shadow:0 4px 10px rgba(0,0,0,0.1);
-  overflow-wrap: break-word;
-  word-break: break-word;
-}
-.card img {
-  width:100%;
-  height:160px;
-  object-fit:cover;
-  border-radius:10px;
-  cursor:pointer;
-  transition: transform 0.2s;
-}
-.card img:active {
-  transform: scale(0.97);
-}
-@media (max-width: 600px) {
-  .card img { height:200px; }
-  .grid { grid-template-columns: repeat(auto-fill,minmax(140px,1fr)); }
-}
-#modal {
-  position:fixed;
-  top:0; left:0;
-  width:100%; height:100%;
-  background:black;
-  display:none;
-  justify-content:center;
-  align-items:center;
-}
-#modal img {
-  max-width:90%;
-  max-height:90%;
-}
-#modal button {
-  position:absolute;
-  top:50%;
-  transform:translateY(-50%);
-  font-size:22px;
-  background: rgba(255,255,255,0.3);
-  border:none;
-  padding:10px;
-  border-radius:8px;
-}
-#prevBtn { left:10px; }
-#nextBtn { right:10px; }
-#loader { display:none; }
+:root { --bg:#eaf6ff; --card:white; --text:#333; }
+body.dark { --bg:#1e2a36; --card:#2a3a4a; --text:#fff; }
+body { margin:0; font-family:Arial; background:var(--bg); color:var(--text); }
+header { padding:10px; display:flex; justify-content:space-between; background:#9fd3ff; flex-wrap:wrap; }
+.controls { padding:10px; display:flex; gap:5px; flex-wrap:wrap; }
+input, select, button, textarea { padding:8px; border-radius:8px; border:none; }
+.grid { display:grid; grid-template-columns: repeat(auto-fill,minmax(180px,1fr)); gap:10px; padding:10px; }
+.card { background:var(--card); padding:10px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
+.card img { width:100%; height:160px; object-fit:cover; border-radius:10px; cursor:pointer; }
+#modal { position:fixed; top:0; left:0; width:100%; height:100%; background:black; display:none; justify-content:center; align-items:center; }
+#modal img { max-width:90%; max-height:90%; }
 </style>
 </head>
+
 <body>
 
 <header>
@@ -112,7 +31,6 @@ input, select, button, textarea {
 </header>
 
 <div id="loginBox" style="display:none; padding:10px;">
-  <h3>Вхід адміна</h3>
   <input id="login" placeholder="Логін">
   <input id="password" type="password" placeholder="Пароль">
   <button onclick="loginAdmin()">Увійти</button>
@@ -120,24 +38,13 @@ input, select, button, textarea {
 
 <div class="controls">
   <input id="search" placeholder="Пошук...">
-  <select id="sort">
-    <option value="">Сортування</option>
-    <option value="asc">Ціна ↑</option>
-    <option value="desc">Ціна ↓</option>
-  </select>
-  <button onclick="toggleView()">🔘 Grid/List</button>
 </div>
 
-<div id="adminPanel" style="padding:10px; display:none;">
-  <h3>Адмін</h3>
+<div id="adminPanel" style="display:none; padding:10px;">
   <input id="title" placeholder="Назва">
   <input id="price" placeholder="Ціна">
   <textarea id="desc" placeholder="Опис"></textarea>
   <input type="file" id="images" multiple>
-  <input id="inst" placeholder="Instagram">
-  <input id="tg" placeholder="Telegram">
-  <input id="phone" placeholder="Phone">
-  <input id="email" placeholder="Email">
   <button id="addBtn">Додати</button>
   <div id="loader">⏳ Завантаження...</div>
 </div>
@@ -145,14 +52,13 @@ input, select, button, textarea {
 <div id="posts" class="grid"></div>
 
 <div id="modal" onclick="closeModal()">
-  <button id="prevBtn" onclick="event.stopPropagation()">⬅️</button>
   <img id="modalImg">
-  <button id="nextBtn" onclick="event.stopPropagation()">➡️</button>
 </div>
 
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
 const firebaseConfig = {
@@ -165,186 +71,118 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 const storage = getStorage(app);
 
-let posts = JSON.parse(localStorage.getItem("posts")||"[]");
-let editId = null;
-let isAdmin = localStorage.getItem("admin")==="true";
-let view="grid";
-let currentImages=[], currentIndex=0;
+const postsRef = collection(db,"posts");
 
-const postsDiv = document.getElementById("posts");
-const searchInput = document.getElementById("search");
-const adminPanel = document.getElementById("adminPanel");
-const loginBox = document.getElementById("loginBox");
-const sort = document.getElementById("sort");
-const loader = document.getElementById("loader");
+let posts = [];
+let editId=null;
+let isAdmin=false;
 
-document.getElementById("adminBtn").onclick = ()=>{ loginBox.style.display="block"; };
+const postsDiv=document.getElementById("posts");
+const loader=document.getElementById("loader");
 
-window.loginAdmin = ()=>{
-  const l = login.value;
-  const p = password.value;
-  if(l==="admin" && p==="1234"){
-    localStorage.setItem("admin","true");
+// 🔥 realtime база
+onSnapshot(postsRef,(snap)=>{
+  posts = snap.docs.map(d=>({id:d.id,...d.data()}));
+  render();
+});
+
+// admin login
+document.getElementById("adminBtn").onclick=()=>{
+  loginBox.style.display="block";
+};
+
+window.loginAdmin=()=>{
+  if(login.value==="admin" && password.value==="1234"){
     isAdmin=true;
     adminPanel.style.display="block";
     loginBox.style.display="none";
-    render();
-  } else alert("❌ Невірно");
+  }
 };
 
-window.logout = ()=>{
-  localStorage.removeItem("admin");
+window.logout=()=>{
   isAdmin=false;
   adminPanel.style.display="none";
-  render();
 };
 
+// add/edit
 document.getElementById("addBtn").onclick = async ()=>{
 
   loader.style.display="block";
 
-  const imgs = [];
+  const imgs=[];
 
   for(let f of images.files){
-    const storageRef = ref(storage, `products/${Date.now()}_${f.name}`);
-    await uploadBytes(storageRef, f);
+    const storageRef = ref(storage,`products/${Date.now()}_${f.name}`);
+    await uploadBytes(storageRef,f);
     const url = await getDownloadURL(storageRef);
     imgs.push(url);
   }
 
   if(editId){
-    const p = posts.find(x=>x.title===editId);
-    if(p){
-      p.title = title.value;
-      p.desc = desc.value;
-      p.price = Number(price.value)||0;
-      if(imgs.length) p.images = imgs;
-      p.inst = inst.value;
-      p.tg = tg.value;
-      p.phone = phone.value;
-      p.email = email.value;
-    }
-    editId=null;
-  } else {
-    posts.push({
+    await updateDoc(doc(db,"posts",editId),{
       title:title.value,
       desc:desc.value,
       price:Number(price.value)||0,
-      images: imgs,
-      inst:inst.value,
-      tg:tg.value,
-      phone:phone.value,
-      email:email.value
+      images:imgs
+    });
+    editId=null;
+  } else {
+    await addDoc(postsRef,{
+      title:title.value,
+      desc:desc.value,
+      price:Number(price.value)||0,
+      images:imgs
     });
   }
 
-  localStorage.setItem("posts", JSON.stringify(posts));
-
-  title.value=desc.value=price.value=inst.value=tg.value=phone.value=email.value="";
-  images.value="";
   loader.style.display="none";
-  render();
+
+  title.value=desc.value=price.value="";
+  images.value="";
 };
 
+// render
 function render(){
-  postsDiv.className=view;
-  let filtered = [...posts];
-  const searchVal = searchInput.value.toLowerCase();
-  if(searchVal) filtered = filtered.filter(p=>p.title.toLowerCase().includes(searchVal));
-  if(sort.value==="asc") filtered.sort((a,b)=>a.price-b.price);
-  if(sort.value==="desc") filtered.sort((a,b)=>b.price-a.price);
-
   postsDiv.innerHTML="";
-  filtered.forEach(p=>{
+  posts.forEach(p=>{
     const div=document.createElement("div");
     div.className="card";
-    const img = (p.images && p.images[0]) || "";
 
-    div.innerHTML= `
-      ${img?`<img src="${img}" onclick='openModal(${JSON.stringify(p.images)})'>`:""}
+    div.innerHTML=`
+      ${p.images ? `<img src="${p.images[0]}" onclick="openModal('${p.images[0]}')">` : ""}
       <h4>${p.title}</h4>
       <p>${p.desc}</p>
       <b>${p.price} грн</b>
 
-      ${!isAdmin ? `
-        <div style="margin-top:8px; font-size:14px;">
-          ${p.inst ? `<div>📷 Instagram: <a href="${p.inst}" target="_blank">${p.inst}</a></div>` : ""}
-          ${p.tg ? `<div>✈️ Telegram: ${p.tg}</div>` : ""}
-          ${p.phone ? `<div>📞 Phone: ${p.phone}</div>` : ""}
-          ${p.email ? `<div>✉️ Email: ${p.email}</div>` : ""}
-        </div>
-      ` : ""}
-
       ${isAdmin ? `
-        <div style="margin-top:8px; display:flex; gap:5px;">
-          <button onclick="editPost('${p.title}')">✏️ Edit</button>
-          <button onclick="deletePost('${p.title}')">🗑 Delete</button>
-        </div>
+        <button onclick="deletePost('${p.id}')">🗑</button>
       ` : ""}
     `;
+
     postsDiv.appendChild(div);
   });
 }
 
-window.editPost=(t)=>{
-  const p = posts.find(x=>x.title===t);
-  if(!p) return;
-
-  title.value=p.title;
-  desc.value=p.desc;
-  price.value=p.price;
-  inst.value=p.inst||"";
-  tg.value=p.tg||"";
-  phone.value=p.phone||"";
-  email.value=p.email||"";
-  editId=t;
-};
-
-window.deletePost=(t)=>{
-  if(confirm("Видалити цей пост?")){
-    posts = posts.filter(p=>p.title!==t);
-    localStorage.setItem("posts", JSON.stringify(posts));
-    render();
+// delete
+window.deletePost=async(id)=>{
+  if(confirm("Видалити?")){
+    await deleteDoc(doc(db,"posts",id));
   }
 };
 
-window.openModal=(images)=>{
-  currentImages = images;
-  currentIndex=0;
+// modal
+window.openModal=(img)=>{
   modal.style.display="flex";
-  modalImg.src=currentImages[0];
+  modalImg.src=img;
 };
 
-window.closeModal=()=>{ modal.style.display="none"; };
+window.closeModal=()=>modal.style.display="none";
 
-document.getElementById("prevBtn").onclick=(e)=>{
-  e.stopPropagation();
-  if(!currentImages.length) return;
-  currentIndex=(currentIndex-1+currentImages.length)%currentImages.length;
-  modalImg.src=currentImages[currentIndex];
-};
-
-document.getElementById("nextBtn").onclick=(e)=>{
-  e.stopPropagation();
-  if(!currentImages.length) return;
-  currentIndex=(currentIndex+1)%currentImages.length;
-  modalImg.src=currentImages[currentIndex];
-};
-
-window.toggleView=()=>{ view = view==="grid"?"list":"grid"; render(); };
-window.toggleTheme=()=>{ document.body.classList.toggle("dark"); };
-searchInput.oninput=render;
-sort.onchange=render;
-
-window.onload=()=>{
-  if(localStorage.getItem("admin")==="true"){
-    isAdmin=true;
-    adminPanel.style.display="block";
-  }
-  render();
-};
+// theme
+window.toggleTheme=()=>document.body.classList.toggle("dark");
 
 </script>
 
