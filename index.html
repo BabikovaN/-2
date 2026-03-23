@@ -225,7 +225,7 @@ function render(){
 
       ${!isAdmin ? `
         <div style="margin-top:8px; font-size:14px;">
-          ${p.inst ? `<div>📷 Instagram: ${p.inst}</div>` : ""}
+          ${p.inst ? `<div>📷 Instagram: <a href="${p.inst}" target="_blank">${p.inst}</a></div>` : ""}
           ${p.tg ? `<div>✈️ Telegram: ${p.tg}</div>` : ""}
           ${p.phone ? `<div>📞 Phone: ${p.phone}</div>` : ""}
           ${p.email ? `<div>✉️ Email: ${p.email}</div>` : ""}
