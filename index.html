@@ -375,7 +375,7 @@ window.deletePost = async (id)=>{
 
 /* MODAL */
 window.openModalById = (id)=>{
-  const p = posts.find(x=>x.id===id);
+  const p = posts.find(x => x.id === id);
   if(!p) return;
   openModal(p.images);
 };
@@ -385,23 +385,29 @@ function openModal(imgs){
   currentIndex = 0;
   zoom = 1;
 
-  modal.style.display="flex";
+  modal.style.display = "flex";
   renderModal();
 }
 
 function renderModal(){
+  if(!currentImages || !currentImages.length) return;
+
   modalImg.src = currentImages[currentIndex];
   modalImg.style.transformOrigin = "center center";
-  modalImg.style.transform = `scale(${zoom})`;
+  modalImg.style.transform = scale(${zoom}); // ✅ виправлено
 }
-  
+
 window.nextImg = ()=>{
+  if(!currentImages.length) return;
+
   currentIndex = (currentIndex + 1) % currentImages.length;
   zoom = 1;
   renderModal();
 };
 
 window.prevImg = ()=>{
+  if(!currentImages.length) return;
+
   currentIndex = (currentIndex - 1 + currentImages.length) % currentImages.length;
   zoom = 1;
   renderModal();
@@ -416,9 +422,9 @@ window.zoomOut = ()=>{
   zoom = Math.max(1, zoom - 0.2);
   renderModal();
 };
-  
+
 window.closeModal = ()=>{
-  modal.style.display="none";
+  modal.style.display = "none";
 };
  /* FIX: не закривати modal при кліку на зображення */
 /* THEME */
