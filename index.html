@@ -4,18 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Shop</title>
+
 <style>
-:root { --bg:#eaf6ff; --card:white; --text:#333; }
-body.dark { --bg:#1e2a36; --card:#2a3a4a; --text:#fff; }
-body { margin:0; font-family:Arial; background:var(--bg); color:var(--text); }
-header { padding:10px; display:flex; justify-content:space-between; background:#9fd3ff; flex-wrap:wrap; }
+body { font-family: Arial; margin:0; background:#eaf6ff; }
+header { padding:10px; display:flex; justify-content:space-between; background:#9fd3ff; }
 .controls { padding:10px; display:flex; gap:5px; flex-wrap:wrap; }
-input, select, button, textarea { padding:8px; border-radius:8px; border:none; }
-.grid { display:grid; grid-template-columns: repeat(auto-fill,minmax(180px,1fr)); gap:10px; padding:10px; }
-.card { background:var(--card); padding:10px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
-.card img { width:100%; height:160px; object-fit:cover; border-radius:10px; cursor:pointer; }
-#modal { position:fixed; top:0; left:0; width:100%; height:100%; background:black; display:none; justify-content:center; align-items:center; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; padding:10px; }
+.card { background:white; padding:10px; border-radius:10px; }
+.card img { width:100%; height:150px; object-fit:cover; cursor:pointer; }
+
+#adminPanel { display:none; padding:10px; background:#fff; }
+#modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:black; justify-content:center; align-items:center; }
 #modal img { max-width:90%; max-height:90%; }
+button { padding:6px; }
 </style>
 </head>
 
@@ -24,29 +25,31 @@ input, select, button, textarea { padding:8px; border-radius:8px; border:none; }
 <header>
   <div>🍬 Shop</div>
   <div>
-    <button id="adminBtn">🔐 Admin</button>
-    <button onclick="toggleTheme()">🌗</button>
+    <button onclick="showLogin()">🔐 Admin</button>
     <button onclick="logout()">🚪</button>
   </div>
 </header>
 
 <div id="loginBox" style="display:none; padding:10px;">
-  <input id="login" placeholder="Логін">
-  <input id="password" type="password" placeholder="Пароль">
-  <button onclick="loginAdmin()">Увійти</button>
+  <input id="login" placeholder="login">
+  <input id="password" type="password" placeholder="password">
+  <button onclick="loginAdmin()">Login</button>
 </div>
 
-<div class="controls">
-  <input id="search" placeholder="Пошук...">
-</div>
+<div id="adminPanel">
+  <h3>Адмінка</h3>
+  <input id="title" placeholder="Назва"><br><br>
+  <input id="price" placeholder="Ціна"><br><br>
+  <textarea id="desc" placeholder="Опис"></textarea><br><br>
 
-<div id="adminPanel" style="display:none; padding:10px;">
-  <input id="title" placeholder="Назва">
-  <input id="price" placeholder="Ціна">
-  <textarea id="desc" placeholder="Опис"></textarea>
-  <input type="file" id="images" multiple>
+  <input type="file" id="images" multiple><br><br>
+
+  <input id="inst" placeholder="Instagram link"><br>
+  <input id="tg" placeholder="Telegram"><br>
+  <input id="phone" placeholder="Phone"><br>
+  <input id="email" placeholder="Email"><br><br>
+
   <button id="addBtn">Додати</button>
-  <div id="loader">⏳ Завантаження...</div>
 </div>
 
 <div id="posts" class="grid"></div>
@@ -57,108 +60,121 @@ input, select, button, textarea { padding:8px; border-radius:8px; border:none; }
 
 <script type="module">
 
+/* ===== FIREBASE ===== */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+import { 
+  getFirestore, 
+  collection, 
+  onSnapshot, 
+  addDoc, 
+  deleteDoc, 
+  doc, 
+  updateDoc 
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyD5oRMuZ9-HWC2phcBhiURBlUiHvUJTKak",
+  authDomain: "sweet-market-9c94e.firebaseapp.com",
+  projectId: "sweet-market-9c94e",
+  storageBucket: "sweet-market-9c94e.appspot.com",
+  messagingSenderId: "583966719717",
+  appId: "1:583966719717:web:f16675f96d95fa83b19e0c"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const storage = getStorage(app);
 
-const postsRef = collection(db,"posts");
+/* ===== DOM ===== */
+const postsDiv = document.getElementById("posts");
 
+const title = document.getElementById("title");
+const desc = document.getElementById("desc");
+const price = document.getElementById("price");
+const images = document.getElementById("images");
+const inst = document.getElementById("inst");
+const tg = document.getElementById("tg");
+const phone = document.getElementById("phone");
+const email = document.getElementById("email");
+
+const login = document.getElementById("login");
+const password = document.getElementById("password");
+const adminPanel = document.getElementById("adminPanel");
+const loginBox = document.getElementById("loginBox");
+const modal = document.getElementById("modal");
+const modalImg = document.getElementById("modalImg");
+
+/* ===== STATE ===== */
 let posts = [];
-let editId=null;
-let isAdmin=false;
+let isAdmin = false;
+let editId = null;
 
-const postsDiv=document.getElementById("posts");
-const loader=document.getElementById("loader");
-
-// 🔥 realtime база
-onSnapshot(postsRef,(snap)=>{
-  posts = snap.docs.map(d=>({id:d.id,...d.data()}));
+/* ===== LOAD DATA ===== */
+onSnapshot(collection(db,"posts"), (snapshot)=>{
+  posts = snapshot.docs.map(d=>({id:d.id, ...d.data()}));
   render();
 });
 
-// admin login
-document.getElementById("adminBtn").onclick=()=>{
-  loginBox.style.display="block";
-};
-
-window.loginAdmin=()=>{
-  if(login.value==="admin" && password.value==="1234"){
-    isAdmin=true;
-    adminPanel.style.display="block";
-    loginBox.style.display="none";
-  }
-};
-
-window.logout=()=>{
-  isAdmin=false;
-  adminPanel.style.display="none";
-};
-
-// add/edit
+/* ===== ADD / EDIT ===== */
 document.getElementById("addBtn").onclick = async ()=>{
 
-  loader.style.display="block";
+  const files = images.files;
+  const imgs = [];
 
-  const imgs=[];
-
-  for(let f of images.files){
-    const storageRef = ref(storage,`products/${Date.now()}_${f.name}`);
-    await uploadBytes(storageRef,f);
-    const url = await getDownloadURL(storageRef);
-    imgs.push(url);
+  for(let file of files){
+    const base64 = await new Promise(res=>{
+      const reader = new FileReader();
+      reader.onload = ()=>res(reader.result);
+      reader.readAsDataURL(file);
+    });
+    imgs.push(base64);
   }
+
+  const data = {
+    title: title.value,
+    desc: desc.value,
+    price: Number(price.value)||0,
+    images: imgs,
+    inst: inst.value,
+    tg: tg.value,
+    phone: phone.value,
+    email: email.value
+  };
 
   if(editId){
-    await updateDoc(doc(db,"posts",editId),{
-      title:title.value,
-      desc:desc.value,
-      price:Number(price.value)||0,
-      images:imgs
-    });
-    editId=null;
+    await updateDoc(doc(db,"posts",editId), data);
+    editId = null;
   } else {
-    await addDoc(postsRef,{
-      title:title.value,
-      desc:desc.value,
-      price:Number(price.value)||0,
-      images:imgs
-    });
+    await addDoc(collection(db,"posts"), data);
   }
 
-  loader.style.display="none";
-
-  title.value=desc.value=price.value="";
-  images.value="";
+  title.value = desc.value = price.value = inst.value = tg.value = phone.value = email.value = "";
+  images.value = "";
 };
 
-// render
+/* ===== RENDER ===== */
 function render(){
-  postsDiv.innerHTML="";
-  posts.forEach(p=>{
-    const div=document.createElement("div");
-    div.className="card";
+  postsDiv.innerHTML = "";
 
-    div.innerHTML=`
-      ${p.images ? `<img src="${p.images[0]}" onclick="openModal('${p.images[0]}')">` : ""}
+  posts.forEach(p=>{
+    const div = document.createElement("div");
+    div.className = "card";
+
+    div.innerHTML = `
+      ${p.images?.[0] ? `<img src="${p.images[0]}" onclick="openModal(${JSON.stringify(p.images)})">` : ""}
       <h4>${p.title}</h4>
       <p>${p.desc}</p>
       <b>${p.price} грн</b>
 
+      <div>
+        ${p.inst ? `<a href="${p.inst}" target="_blank">Instagram</a><br>` : ""}
+        ${p.tg ? `TG: ${p.tg}<br>` : ""}
+        ${p.phone ? `📞 ${p.phone}<br>` : ""}
+        ${p.email ? `✉️ ${p.email}` : ""}
+      </div>
+
       ${isAdmin ? `
-        <button onclick="deletePost('${p.id}')">🗑</button>
+        <button onclick="editPost('${p.id}')">Edit</button>
+        <button onclick="deletePost('${p.id}')">Delete</button>
       ` : ""}
     `;
 
@@ -166,23 +182,61 @@ function render(){
   });
 }
 
-// delete
-window.deletePost=async(id)=>{
-  if(confirm("Видалити?")){
+/* ===== ADMIN ===== */
+window.loginAdmin = ()=>{
+  if(login.value==="admin" && password.value==="1234"){
+    isAdmin = true;
+    adminPanel.style.display="block";
+    loginBox.style.display="none";
+  } else alert("Wrong");
+};
+
+window.logout = ()=>{
+  isAdmin=false;
+  adminPanel.style.display="none";
+};
+
+/* ===== EDIT / DELETE ===== */
+window.editPost = (id)=>{
+  const p = posts.find(x=>x.id===id);
+  if(!p) return;
+
+  title.value = p.title;
+  desc.value = p.desc;
+  price.value = p.price;
+  inst.value = p.inst || "";
+  tg.value = p.tg || "";
+  phone.value = p.phone || "";
+  email.value = p.email || "";
+
+  editId = id;
+};
+
+window.deletePost = async (id)=>{
+  if(confirm("Delete?")){
     await deleteDoc(doc(db,"posts",id));
   }
 };
 
-// modal
-window.openModal=(img)=>{
+/* ===== MODAL ===== */
+let currentImages = [];
+let currentIndex = 0;
+
+window.openModal = (imgs)=>{
+  currentImages = imgs;
+  currentIndex = 0;
   modal.style.display="flex";
-  modalImg.src=img;
+  modalImg.src = currentImages[0];
 };
 
-window.closeModal=()=>modal.style.display="none";
+window.closeModal = ()=>{
+  modal.style.display="none";
+};
 
-// theme
-window.toggleTheme=()=>document.body.classList.toggle("dark");
+/* ===== UI ===== */
+window.showLogin = ()=>{
+  loginBox.style.display="block";
+};
 
 </script>
 
