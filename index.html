@@ -93,11 +93,15 @@ button {
 #modal img {
   max-width:95%;
   max-height:80%;
+  transition: transform 0.2s;
+  cursor: grab;
+  user-select:none;
 }
 
 .modal-controls {
   margin-top:10px;
 }
+  
 </style>
 </head>
 
@@ -143,13 +147,16 @@ button {
 
 <div id="modal">
   <img id="modalImg">
+
   <div class="modal-controls">
     <button onclick="prevImg()">⬅</button>
     <button onclick="nextImg()">➡</button>
+    <button onclick="zoomIn()">➕</button>
+    <button onclick="zoomOut()">➖</button>
     <button onclick="closeModal()">✖</button>
   </div>
 </div>
-
+  
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -197,6 +204,7 @@ let oldImages = [];
 
 let currentImages = [];
 let currentIndex = 0;
+let zoom = 1;
 
 /* LOAD */
 onSnapshot(collection(db,"posts"), (snapshot)=>{
@@ -361,24 +369,43 @@ window.openModalById = (id)=>{
   if(!p) return;
   openModal(p.images);
 };
-
 function openModal(imgs){
   currentImages = imgs;
   currentIndex = 0;
+  zoom = 1;
+
   modal.style.display="flex";
-  modalImg.src = currentImages[currentIndex];
+  renderModal();
 }
 
+  function renderModal(){
+  modalImg.src = currentImages[currentIndex];
+  modalImg.style.transformOrigin = "center center";
+  modalImg.style.transform = `scale(${zoom})`;
+}
+  
 window.nextImg = ()=>{
   currentIndex = (currentIndex + 1) % currentImages.length;
-  modalImg.src = currentImages[currentIndex];
+  zoom = 1;
+  renderModal();
 };
 
 window.prevImg = ()=>{
   currentIndex = (currentIndex - 1 + currentImages.length) % currentImages.length;
-  modalImg.src = currentImages[currentIndex];
+  zoom = 1;
+  renderModal();
 };
 
+   window.zoomIn = ()=>{
+  zoom += 0.2;
+  renderModal();
+};
+
+window.zoomOut = ()=>{
+  zoom = Math.max(1, zoom - 0.2);
+  renderModal();
+};
+  
 window.closeModal = ()=>{
   modal.style.display="none";
 };
