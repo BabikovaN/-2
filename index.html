@@ -54,7 +54,7 @@ button {
   border-radius:12px;
 }
 
-.card img {
+.card img, .card video {
   width:100%;
   height:180px;
   object-fit:cover;
@@ -101,7 +101,6 @@ button {
 .modal-controls {
   margin-top:10px;
 }
-  
 </style>
 </head>
 
@@ -132,6 +131,8 @@ button {
   <input id="title" placeholder="Назва"><br><br>
   <input id="price" placeholder="Ціна"><br><br>
   <textarea id="desc" placeholder="Опис"></textarea><br><br>
+
+  <input id="video" placeholder="Video URL (mp4)"><br><br>
 
   <input id="inst" placeholder="Instagram"><br>
   <input id="tg" placeholder="Telegram"><br>
@@ -181,6 +182,8 @@ const title = document.getElementById("title");
 const desc = document.getElementById("desc");
 const price = document.getElementById("price");
 const images = document.getElementById("images");
+const video = document.getElementById("video");
+
 const inst = document.getElementById("inst");
 const tg = document.getElementById("tg");
 const phone = document.getElementById("phone");
@@ -240,6 +243,7 @@ document.getElementById("addBtn").onclick = async ()=>{
     desc: desc.value,
     price: Number(price.value)||0,
     images: finalImages,
+    video: video.value || "",
     inst: inst.value,
     tg: tg.value,
     phone: phone.value,
@@ -254,7 +258,7 @@ document.getElementById("addBtn").onclick = async ()=>{
     await addDoc(collection(db,"posts"), data);
   }
 
-  title.value = desc.value = price.value = inst.value = tg.value = phone.value = email.value = "";
+  title.value = desc.value = price.value = inst.value = tg.value = phone.value = email.value = video.value = "";
   images.value = "";
   oldImages = [];
 };
@@ -276,12 +280,16 @@ function render(){
     const div = document.createElement("div");
     div.className = "card";
 
-    const imgHTML = p.images && p.images.length
-      ? `<img src="${p.images[0]}" onclick="openModalById('${p.id}')">`
-      : "";
+    let mediaHTML = "";
+
+    if(p.video){
+      mediaHTML = `<video controls src="${p.video}"></video>`;
+    } else if(p.images && p.images.length){
+      mediaHTML = `<img src="${p.images[0]}" onclick="openModalById('${p.id}')">`;
+    }
 
     div.innerHTML = `
-      ${imgHTML}
+      ${mediaHTML}
 
       <h4>${p.title}</h4>
       <p>${p.desc}</p>
@@ -351,6 +359,7 @@ window.editPost = (id)=>{
   tg.value=p.tg||"";
   phone.value=p.phone||"";
   email.value=p.email||"";
+  video.value=p.video||"";
 
   oldImages = p.images || [];
   editId=id;
@@ -369,6 +378,7 @@ window.openModalById = (id)=>{
   if(!p) return;
   openModal(p.images);
 };
+
 function openModal(imgs){
   currentImages = imgs;
   currentIndex = 0;
@@ -378,7 +388,7 @@ function openModal(imgs){
   renderModal();
 }
 
-  function renderModal(){
+function renderModal(){
   modalImg.src = currentImages[currentIndex];
   modalImg.style.transformOrigin = "center center";
   modalImg.style.transform = `scale(${zoom})`;
@@ -396,7 +406,7 @@ window.prevImg = ()=>{
   renderModal();
 };
 
-   window.zoomIn = ()=>{
+window.zoomIn = ()=>{
   zoom += 0.2;
   renderModal();
 };
