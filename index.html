@@ -6,17 +6,112 @@
 <title>Shop</title>
 
 <style>
-body { font-family: Arial; margin:0; background:#eaf6ff; }
-header { padding:10px; display:flex; justify-content:space-between; background:#9fd3ff; }
-.controls { padding:10px; display:flex; gap:5px; flex-wrap:wrap; }
-.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; padding:10px; }
-.card { background:white; padding:10px; border-radius:10px; }
-.card img { width:100%; height:150px; object-fit:cover; cursor:pointer; }
+body {
+  font-family: Arial;
+  margin:0;
+  background:#f4f6f9;
+}
 
-#adminPanel { display:none; padding:10px; background:#fff; }
-#modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:black; justify-content:center; align-items:center; }
-#modal img { max-width:90%; max-height:90%; }
-button { padding:6px; }
+/* HEADER */
+header {
+  padding:12px;
+  display:flex;
+  justify-content:space-between;
+  background:#4da3ff;
+  color:white;
+  font-weight:bold;
+}
+
+/* BUTTONS */
+button {
+  padding:6px 10px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  background:#4da3ff;
+  color:white;
+}
+
+/* GRID */
+.grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:15px;
+  padding:15px;
+}
+
+/* CARD */
+.card {
+  background:white;
+  padding:10px;
+  border-radius:12px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.08);
+  transition:0.2s;
+}
+
+.card:hover {
+  transform:scale(1.02);
+}
+
+/* IMAGE */
+.card img {
+  width:100%;
+  height:180px;
+  object-fit:cover;
+  border-radius:10px;
+  cursor:pointer;
+}
+
+/* TEXT */
+.card h4 {
+  margin:8px 0 5px;
+}
+
+.card p {
+  font-size:14px;
+  color:#555;
+}
+
+/* ADMIN */
+#adminPanel {
+  display:none;
+  padding:15px;
+  background:white;
+  margin:10px;
+  border-radius:10px;
+}
+
+/* LOGIN */
+#loginBox {
+  display:none;
+  padding:10px;
+}
+
+/* MODAL */
+#modal {
+  display:none;
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:black;
+  justify-content:center;
+  align-items:center;
+}
+
+#modal img {
+  max-width:95%;
+  max-height:95%;
+  border-radius:10px;
+}
+
+/* MOBILE */
+@media(max-width:600px){
+  .card img {
+    height:140px;
+  }
+}
 </style>
 </head>
 
@@ -25,26 +120,27 @@ button { padding:6px; }
 <header>
   <div>🍬 Shop</div>
   <div>
-    <button onclick="showLogin()">🔐 Admin</button>
-    <button onclick="logout()">🚪</button>
+    <button onclick="showLogin()">Admin</button>
+    <button onclick="logout()">Logout</button>
   </div>
 </header>
 
-<div id="loginBox" style="display:none; padding:10px;">
-  <input id="login" placeholder="login">
-  <input id="password" type="password" placeholder="password">
+<div id="loginBox">
+  <input id="login" placeholder="login"><br><br>
+  <input id="password" type="password" placeholder="password"><br><br>
   <button onclick="loginAdmin()">Login</button>
 </div>
 
 <div id="adminPanel">
   <h3>Адмінка</h3>
+
   <input id="title" placeholder="Назва"><br><br>
   <input id="price" placeholder="Ціна"><br><br>
   <textarea id="desc" placeholder="Опис"></textarea><br><br>
 
   <input type="file" id="images" multiple><br><br>
 
-  <input id="inst" placeholder="Instagram link"><br>
+  <input id="inst" placeholder="Instagram"><br>
   <input id="tg" placeholder="Telegram"><br>
   <input id="phone" placeholder="Phone"><br>
   <input id="email" placeholder="Email"><br><br>
@@ -60,16 +156,10 @@ button { padding:6px; }
 
 <script type="module">
 
-/* ===== FIREBASE ===== */
+/* FIREBASE */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { 
-  getFirestore, 
-  collection, 
-  onSnapshot, 
-  addDoc, 
-  deleteDoc, 
-  doc, 
-  updateDoc 
+  getFirestore, collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc 
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -84,9 +174,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* ===== DOM ===== */
+/* DOM */
 const postsDiv = document.getElementById("posts");
-
 const title = document.getElementById("title");
 const desc = document.getElementById("desc");
 const price = document.getElementById("price");
@@ -100,21 +189,22 @@ const login = document.getElementById("login");
 const password = document.getElementById("password");
 const adminPanel = document.getElementById("adminPanel");
 const loginBox = document.getElementById("loginBox");
+
 const modal = document.getElementById("modal");
 const modalImg = document.getElementById("modalImg");
 
-/* ===== STATE ===== */
+/* STATE */
 let posts = [];
 let isAdmin = false;
 let editId = null;
 
-/* ===== LOAD DATA ===== */
+/* LOAD */
 onSnapshot(collection(db,"posts"), (snapshot)=>{
   posts = snapshot.docs.map(d=>({id:d.id, ...d.data()}));
   render();
 });
 
-/* ===== ADD / EDIT ===== */
+/* ADD / EDIT */
 document.getElementById("addBtn").onclick = async ()=>{
 
   const files = images.files;
@@ -151,7 +241,7 @@ document.getElementById("addBtn").onclick = async ()=>{
   images.value = "";
 };
 
-/* ===== RENDER ===== */
+/* RENDER */
 function render(){
   postsDiv.innerHTML = "";
 
@@ -163,9 +253,9 @@ function render(){
       ${p.images?.[0] ? `<img src="${p.images[0]}" onclick="openModal(${JSON.stringify(p.images)})">` : ""}
       <h4>${p.title}</h4>
       <p>${p.desc}</p>
-      <b>${p.price} грн</b>
+      <b>${p.price} грн</b><br><br>
 
-      <div>
+      <div style="font-size:13px">
         ${p.inst ? `<a href="${p.inst}" target="_blank">Instagram</a><br>` : ""}
         ${p.tg ? `TG: ${p.tg}<br>` : ""}
         ${p.phone ? `📞 ${p.phone}<br>` : ""}
@@ -173,6 +263,7 @@ function render(){
       </div>
 
       ${isAdmin ? `
+        <br>
         <button onclick="editPost('${p.id}')">Edit</button>
         <button onclick="deletePost('${p.id}')">Delete</button>
       ` : ""}
@@ -182,7 +273,7 @@ function render(){
   });
 }
 
-/* ===== ADMIN ===== */
+/* ADMIN */
 window.loginAdmin = ()=>{
   if(login.value==="admin" && password.value==="1234"){
     isAdmin = true;
@@ -196,7 +287,7 @@ window.logout = ()=>{
   adminPanel.style.display="none";
 };
 
-/* ===== EDIT / DELETE ===== */
+/* EDIT / DELETE */
 window.editPost = (id)=>{
   const p = posts.find(x=>x.id===id);
   if(!p) return;
@@ -218,22 +309,17 @@ window.deletePost = async (id)=>{
   }
 };
 
-/* ===== MODAL ===== */
-let currentImages = [];
-let currentIndex = 0;
-
+/* MODAL */
 window.openModal = (imgs)=>{
-  currentImages = imgs;
-  currentIndex = 0;
   modal.style.display="flex";
-  modalImg.src = currentImages[0];
+  modalImg.src = imgs[0];
 };
 
 window.closeModal = ()=>{
   modal.style.display="none";
 };
 
-/* ===== UI ===== */
+/* UI */
 window.showLogin = ()=>{
   loginBox.style.display="block";
 };
