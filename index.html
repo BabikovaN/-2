@@ -117,6 +117,14 @@ button {
   </div>
 </header>
 
+  <div style="padding:10px;">
+  <input id="search" placeholder="🔍 Пошук товару..." style="
+    width:100%;
+    padding:10px;
+    border-radius:8px;
+    border:none;
+  ">
+</div>
 <div id="loginBox">
   <input id="login" placeholder="login"><br><br>
   <input id="password" type="password" placeholder="password"><br><br>
@@ -188,10 +196,14 @@ const loginBox = document.getElementById("loginBox");
 const modal = document.getElementById("modal");
 const modalImg = document.getElementById("modalImg");
 
+// 🔍 пошук
+const search = document.getElementById("search");
+
 /* STATE */
 let posts = [];
 let isAdmin = false;
 let editId = null;
+let oldImages = [];
 
 let currentImages = [];
 let currentIndex = 0;
@@ -217,15 +229,18 @@ document.getElementById("addBtn").onclick = async ()=>{
     imgs.push(base64);
   }
 
+  const finalImages = imgs.length ? imgs : oldImages;
+
   const data = {
     title: title.value,
     desc: desc.value,
     price: Number(price.value)||0,
-    images: imgs,
+    images: finalImages,
     inst: inst.value,
     tg: tg.value,
     phone: phone.value,
-    email: email.value
+    email: email.value,
+    likes: editId ? (posts.find(p=>p.id===editId)?.likes || 0) : 0
   };
 
   if(editId){
@@ -237,25 +252,57 @@ document.getElementById("addBtn").onclick = async ()=>{
 
   title.value = desc.value = price.value = inst.value = tg.value = phone.value = email.value = "";
   images.value = "";
+  oldImages = [];
 };
 
 /* RENDER */
 function render(){
   postsDiv.innerHTML="";
 
-  posts.forEach(p=>{
-    const div=document.createElement("div");
-    div.className="card";
+  let filtered = [...posts];
 
-    div.innerHTML=`
-      ${p.images?.[0] ? `<img src="${p.images[0]}" onclick="openModal(${JSON.stringify(p.images)})">` : ""}
+  // 🔍 пошук
+  const val = search?.value?.toLowerCase() || "";
+  if(val){
+    filtered = filtered.filter(p =>
+      p.title.toLowerCase().includes(val)
+    );
+  }
+
+  filtered.forEach(p=>{
+    const div = document.createElement("div");
+    div.className = "card";
+
+    // фото
+    if(p.images && p.images.length){
+      const img = document.createElement("img");
+      img.src = p.images[0];
+      img.onclick = () => openModal(p.images);
+      div.appendChild(img);
+    }
+
+    div.innerHTML += `
       <h4>${p.title}</h4>
       <p>${p.desc}</p>
       <b>${p.price} грн</b><br><br>
 
+      ❤️ ${p.likes || 0}
+      <button onclick="likePost('${p.id}')">👍</button>
+
+      <br><br>
+
+      ${!isAdmin ? `
+        <div style="font-size:14px;">
+          ${p.inst ? `<a href="${p.inst}" target="_blank">📷 Instagram</a><br>` : ""}
+          ${p.tg ? `✈️ ${p.tg}<br>` : ""}
+          ${p.phone ? `📞 ${p.phone}<br>` : ""}
+          ${p.email ? `✉️ ${p.email}` : ""}
+        </div>
+      ` : ""}
+
       ${isAdmin ? `
-        <button onclick="editPost('${p.id}')">Edit</button>
-        <button onclick="deletePost('${p.id}')">Delete</button>
+        <button onclick="editPost('${p.id}')">✏️ Edit</button>
+        <button onclick="deletePost('${p.id}')">🗑 Delete</button>
       ` : ""}
     `;
 
@@ -263,13 +310,23 @@ function render(){
   });
 }
 
+/* ❤️ LIKE */
+window.likePost = async (id)=>{
+  const p = posts.find(x=>x.id===id);
+  if(!p) return;
+
+  await updateDoc(doc(db,"posts",id), {
+    likes: (p.likes || 0) + 1
+  });
+};
+
 /* ADMIN */
 window.loginAdmin = ()=>{
   if(login.value==="admin" && password.value==="1234"){
     isAdmin=true;
     adminPanel.style.display="block";
     loginBox.style.display="none";
-  } else alert("Wrong");
+  } else alert("Невірний логін");
 };
 
 window.logout = ()=>{
@@ -277,7 +334,7 @@ window.logout = ()=>{
   adminPanel.style.display="none";
 };
 
-/* EDIT / DELETE */
+/* EDIT */
 window.editPost = (id)=>{
   const p = posts.find(x=>x.id===id);
   if(!p) return;
@@ -290,11 +347,13 @@ window.editPost = (id)=>{
   phone.value=p.phone||"";
   email.value=p.email||"";
 
+  oldImages = p.images || [];
   editId=id;
 };
 
+/* DELETE */
 window.deletePost = async (id)=>{
-  if(confirm("Delete?")){
+  if(confirm("Видалити товар?")){
     await deleteDoc(doc(db,"posts",id));
   }
 };
@@ -308,13 +367,11 @@ window.openModal = (imgs)=>{
 };
 
 window.nextImg = ()=>{
-  if(!currentImages.length) return;
   currentIndex = (currentIndex + 1) % currentImages.length;
   modalImg.src = currentImages[currentIndex];
 };
 
 window.prevImg = ()=>{
-  if(!currentImages.length) return;
   currentIndex = (currentIndex - 1 + currentImages.length) % currentImages.length;
   modalImg.src = currentImages[currentIndex];
 };
@@ -332,6 +389,13 @@ window.toggleTheme = ()=>{
 window.showLogin = ()=>{
   loginBox.style.display="block";
 };
+
+// 🔍 live пошук
+if(search){
+  search.oninput = render;
+}
+
+
 
 </script>
 
