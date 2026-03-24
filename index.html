@@ -269,12 +269,15 @@ function render(){
 
   let filtered = [...posts];
 
-  const val = (search.value || "").trim().toLowerCase();
-  if(val){
-    filtered = filtered.filter(p =>
-      p.title.toLowerCase().includes(val)
-    );
-  }
+const val = (search.value || "").trim().toLowerCase();
+
+let filtered = posts;
+
+if (val.length > 0) {
+  filtered = posts.filter(p =>
+    (p.title || "").toLowerCase().includes(val)
+  );
+}
 
   filtered.forEach(p=>{
     const div = document.createElement("div");
@@ -344,6 +347,7 @@ window.logout = ()=>{
 };
 
 window.showLogin = ()=>{
+  search.blur();
   loginBox.style.display="block";
 };
 
