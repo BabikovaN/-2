@@ -19,19 +19,6 @@ body.dark {
   --text:#eee;
 }
 
-#modalContent {
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-}
-
-#modal img {
-  max-width:95%;
-  max-height:80%;
-  transition: transform 0.2s;
-  cursor: zoom-in;
-}
-
 body {
   margin:0;
   font-family:Arial;
@@ -103,7 +90,7 @@ button {
   z-index:9999;
 }
 
-#modal img, #modal video {
+#modal img {
   max-width:95%;
   max-height:80%;
 }
@@ -142,7 +129,7 @@ button {
   <input id="price" placeholder="Ціна"><br><br>
   <textarea id="desc" placeholder="Опис"></textarea><br><br>
 
-  <input type="file" id="images" multiple accept="image/*,video/*"><br><br>
+  <input type="file" id="images" multiple><br><br>
 
   <input id="inst" placeholder="Instagram"><br>
   <input id="tg" placeholder="Telegram"><br>
@@ -154,20 +141,12 @@ button {
 
 <div id="posts" class="grid"></div>
 
-<div id="modal" onclick="closeModal(event)">
-  <div id="modalContent" onclick="event.stopPropagation()">
-    <div id="mediaWrapper">
-      <img id="modalImg">
-      <video id="modalVideo" controls style="display:none;"></video>
-    </div>
-
-    <div class="modal-controls">
-      <button onclick="prevMedia()">⬅</button>
-      <button onclick="nextMedia()">➡</button>
-      <button onclick="zoomIn()">➕</button>
-      <button onclick="zoomOut()">➖</button>
-      <button onclick="closeModal()">✖</button>
-    </div>
+<div id="modal">
+  <img id="modalImg">
+  <div class="modal-controls">
+    <button onclick="prevImg()">⬅</button>
+    <button onclick="nextImg()">➡</button>
+    <button onclick="closeModal()">✖</button>
   </div>
 </div>
 
@@ -181,11 +160,15 @@ const firebaseConfig = {
   apiKey: "AIzaSyD5oRMuZ9-HWC2phcBhiURBlUiHvUJTKak",
   authDomain: "sweet-market-9c94e.firebaseapp.com",
   projectId: "sweet-market-9c94e",
+  storageBucket: "sweet-market-9c94e.appspot.com",
+  messagingSenderId: "583966719717",
+  appId: "1:583966719717:web:f16675f96d95fa83b19e0c"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+/* DOM */
 const postsDiv = document.getElementById("posts");
 const title = document.getElementById("title");
 const desc = document.getElementById("desc");
@@ -203,17 +186,17 @@ const loginBox = document.getElementById("loginBox");
 
 const modal = document.getElementById("modal");
 const modalImg = document.getElementById("modalImg");
-const modalVideo = document.getElementById("modalVideo");
 
 const search = document.getElementById("search");
 
+/* STATE */
 let posts = [];
 let isAdmin = false;
 let editId = null;
+let oldImages = [];
 
-let currentMedia = [];
+let currentImages = [];
 let currentIndex = 0;
-let zoom = 1;
 
 /* LOAD */
 onSnapshot(collection(db,"posts"), (snapshot)=>{
@@ -221,11 +204,11 @@ onSnapshot(collection(db,"posts"), (snapshot)=>{
   render();
 });
 
-/* ADD */
+/* ADD / EDIT */
 document.getElementById("addBtn").onclick = async ()=>{
 
   const files = images.files;
-  const media = [];
+  const imgs = [];
 
   for(let file of files){
     const base64 = await new Promise(res=>{
@@ -233,25 +216,27 @@ document.getElementById("addBtn").onclick = async ()=>{
       reader.onload = ()=>res(reader.result);
       reader.readAsDataURL(file);
     });
+    imgs.push(base64);
+  }
 
-    const isVideo = file.type.startsWith("video");
+  const finalImages = imgs.length ? imgs : oldImages;
 
-    media.push({
-      type: isVideo ? "video" : "image",
-      url: base64
-    });
+  let existingLikes = 0;
+  if(editId){
+    const p = posts.find(x=>x.id===editId);
+    if(p) existingLikes = p.likes || 0;
   }
 
   const data = {
     title: title.value,
     desc: desc.value,
     price: Number(price.value)||0,
-    media: media,
+    images: finalImages,
     inst: inst.value,
     tg: tg.value,
     phone: phone.value,
     email: email.value,
-    likes: 0
+    likes: existingLikes
   };
 
   if(editId){
@@ -263,103 +248,78 @@ document.getElementById("addBtn").onclick = async ()=>{
 
   title.value = desc.value = price.value = inst.value = tg.value = phone.value = email.value = "";
   images.value = "";
+  oldImages = [];
 };
 
 /* RENDER */
 function render(){
   postsDiv.innerHTML="";
 
-  const val = search.value.toLowerCase();
+  let filtered = [...posts];
 
-  let filtered = posts.filter(p =>
-    p.title.toLowerCase().includes(val)
-  );
+  const val = search?.value?.toLowerCase() || "";
+  if(val){
+    filtered = filtered.filter(p =>
+      p.title.toLowerCase().includes(val)
+    );
+  }
 
   filtered.forEach(p=>{
     const div = document.createElement("div");
     div.className = "card";
 
-    const first = p.media?.[0];
+    const imgHTML = p.images && p.images.length
+      ? `<img src="${p.images[0]}" onclick="openModalById('${p.id}')">`
+      : "";
 
     div.innerHTML = `
-      ${first ? `<img src="${first.url}" onclick="openModalById('${p.id}')">` : ""}
+      ${imgHTML}
 
       <h4>${p.title}</h4>
       <p>${p.desc}</p>
       <b>${p.price} грн</b><br><br>
 
       ❤️ ${p.likes || 0}
+      <button onclick="likePost('${p.id}')">👍</button>
+
+      <br><br>
+
+      ${!isAdmin ? `
+        <div style="font-size:14px;">
+          ${p.inst ? `<a href="${p.inst}" target="_blank">📷 Instagram</a><br>` : ""}
+          ${p.tg ? `✈️ ${p.tg}<br>` : ""}
+          ${p.phone ? `📞 ${p.phone}<br>` : ""}
+          ${p.email ? `✉️ ${p.email}` : ""}
+        </div>
+      ` : ""}
+
+      ${isAdmin ? `
+        <button onclick="editPost('${p.id}')">✏️ Edit</button>
+        <button onclick="deletePost('${p.id}')">🗑 Delete</button>
+      ` : ""}
     `;
 
     postsDiv.appendChild(div);
   });
 }
 
-/* MODAL */
-window.openModalById = (id)=>{
+/* LIKE */
+window.likePost = async (id)=>{
   const p = posts.find(x=>x.id===id);
   if(!p) return;
 
-  currentMedia = p.media || [];
-  currentIndex = 0;
-  zoom = 1;
-
-  modal.style.display="flex";
-  renderMedia();
+  await updateDoc(doc(db,"posts",id), {
+    likes: (p.likes || 0) + 1
+  });
 };
 
-function renderMedia(){
-  const item = currentMedia[currentIndex];
-
-  if(!item) return;
-
-  if(item.type === "image"){
-    modalImg.style.display="block";
-    modalVideo.style.display="none";
-    modalImg.src = item.url;
-    modalImg.style.transform = `scale(${zoom})`;
-  } else {
-    modalImg.style.display="none";
-    modalVideo.style.display="block";
-    modalVideo.src = item.url;
-  }
-}
-
-window.nextMedia = ()=>{
-  currentIndex = (currentIndex + 1) % currentMedia.length;
-  zoom = 1;
-  renderMedia();
-};
-
-window.prevMedia = ()=>{
-  currentIndex = (currentIndex - 1 + currentMedia.length) % currentMedia.length;
-  zoom = 1;
-  renderMedia();
-};
-
-window.zoomIn = ()=>{
-  zoom += 0.2;
-  renderMedia();
-};
-
-window.zoomOut = ()=>{
-  zoom = Math.max(1, zoom - 0.2);
-  renderMedia();
-};
-
-window.closeModal = (e)=>{
-  if(!e || e.target.id === "modal"){
-    modal.style.display="none";
-  }
-};
-
-/* AUTH */
+/* ADMIN */
 window.loginAdmin = ()=>{
   if(login.value==="admin" && password.value==="1234"){
     isAdmin=true;
     adminPanel.style.display="block";
     loginBox.style.display="none";
-  }
+  } else alert("Невірний логін");
 };
 
 window.logout = ()=>{
@@ -371,10 +331,64 @@ window.showLogin = ()=>{
   loginBox.style.display="block";
 };
 
+/* EDIT */
+window.editPost = (id)=>{
+  const p = posts.find(x=>x.id===id);
+  if(!p) return;
+
+  title.value=p.title;
+  desc.value=p.desc;
+  price.value=p.price;
+  inst.value=p.inst||"";
+  tg.value=p.tg||"";
+  phone.value=p.phone||"";
+  email.value=p.email||"";
+
+  oldImages = p.images || [];
+  editId=id;
+};
+
+/* DELETE */
+window.deletePost = async (id)=>{
+  if(confirm("Видалити товар?")){
+    await deleteDoc(doc(db,"posts",id));
+  }
+};
+
+/* MODAL */
+window.openModalById = (id)=>{
+  const p = posts.find(x=>x.id===id);
+  if(!p) return;
+  openModal(p.images);
+};
+
+function openModal(imgs){
+  currentImages = imgs;
+  currentIndex = 0;
+  modal.style.display="flex";
+  modalImg.src = currentImages[currentIndex];
+}
+
+window.nextImg = ()=>{
+  currentIndex = (currentIndex + 1) % currentImages.length;
+  modalImg.src = currentImages[currentIndex];
+};
+
+window.prevImg = ()=>{
+  currentIndex = (currentIndex - 1 + currentImages.length) % currentImages.length;
+  modalImg.src = currentImages[currentIndex];
+};
+
+window.closeModal = ()=>{
+  modal.style.display="none";
+};
+
+/* THEME */
 window.toggleTheme = ()=>{
   document.body.classList.toggle("dark");
 };
 
+/* SEARCH */
 search.oninput = render;
 
 </script>
