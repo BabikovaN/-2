@@ -1,6 +1,6 @@
 <!DOCTYPE html>   
 <html lang="uk">
-<head>
+<head> 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Shop</title>
@@ -421,10 +421,6 @@ window.closeModal = ()=>{
   modal.style.display="none";
 };
  /* FIX: не закривати modal при кліку на зображення */
-modal.addEventListener("click", (e) => {
-  if (e.target === modal) {
-    closeModal();
-  }
 });
 /* THEME */
 window.toggleTheme = ()=>{
