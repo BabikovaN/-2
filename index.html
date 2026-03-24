@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html>   
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
@@ -419,7 +419,12 @@ window.zoomOut = ()=>{
 window.closeModal = ()=>{
   modal.style.display="none";
 };
-
+ /* FIX: не закривати modal при кліку на зображення */
+modal.addEventListener("click", (e) => {
+  if (e.target === modal) {
+    closeModal();
+  }
+});
 /* THEME */
 window.toggleTheme = ()=>{
   document.body.classList.toggle("dark");
