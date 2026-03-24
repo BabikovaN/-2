@@ -269,7 +269,7 @@ function render(){
 
   let filtered = [...posts];
 
-  const val = search?.value?.toLowerCase() || "";
+  const val = (search.value || "").trim().toLowerCase();
   if(val){
     filtered = filtered.filter(p =>
       p.title.toLowerCase().includes(val)
