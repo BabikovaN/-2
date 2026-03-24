@@ -18,7 +18,19 @@ body.dark {
   --card:#1e1e1e;
   --text:#eee;
 }
+  
+#modalContent {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
 
+#modal img {
+  max-width:95%;
+  max-height:80%;
+  transition: transform 0.2s;
+  cursor: zoom-in;
+}
 body {
   margin:0;
   font-family:Arial;
@@ -129,8 +141,7 @@ button {
   <input id="price" placeholder="Ціна"><br><br>
   <textarea id="desc" placeholder="Опис"></textarea><br><br>
 
-  <input type="file" id="images" multiple><br><br>
-
+<input type="file" id="images" multiple accept="image/*,video/*">
   <input id="inst" placeholder="Instagram"><br>
   <input id="tg" placeholder="Telegram"><br>
   <input id="phone" placeholder="Phone"><br>
@@ -141,15 +152,24 @@ button {
 
 <div id="posts" class="grid"></div>
 
-<div id="modal">
-  <img id="modalImg">
-  <div class="modal-controls">
-    <button onclick="prevImg()">⬅</button>
-    <button onclick="nextImg()">➡</button>
-    <button onclick="closeModal()">✖</button>
+<div id="modal" onclick="closeModal(event)">
+  <div id="modalContent" onclick="event.stopPropagation()">
+    
+    <div id="mediaWrapper">
+      <img id="modalImg">
+      <video id="modalVideo" controls style="display:none; max-width:95%; max-height:80%;"></video>
+    </div>
+
+    <div class="modal-controls">
+      <button onclick="prevMedia()">⬅</button>
+      <button onclick="nextMedia()">➡</button>
+      <button onclick="zoomIn()">➕</button>
+      <button onclick="zoomOut()">➖</button>
+      <button onclick="closeModal()">✖</button>
+    </div>
+
   </div>
 </div>
-
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -195,9 +215,10 @@ let isAdmin = false;
 let editId = null;
 let oldImages = [];
 
-let currentImages = [];
+let currentMedia = [];
 let currentIndex = 0;
-
+let zoom = 1;
+  
 /* LOAD */
 onSnapshot(collection(db,"posts"), (snapshot)=>{
   posts = snapshot.docs.map(d=>({id:d.id, ...d.data()}));
@@ -207,17 +228,25 @@ onSnapshot(collection(db,"posts"), (snapshot)=>{
 /* ADD / EDIT */
 document.getElementById("addBtn").onclick = async ()=>{
 
-  const files = images.files;
-  const imgs = [];
+ const files = images.files;
+const imgs = [];
 
-  for(let file of files){
-    const base64 = await new Promise(res=>{
-      const reader = new FileReader();
-      reader.onload = ()=>res(reader.result);
-      reader.readAsDataURL(file);
-    });
-    imgs.push(base64);
-  }
+for(let file of files){
+  const base64 = await new Promise(res=>{
+    const reader = new FileReader();
+    reader.onload = ()=>res(reader.result);
+    reader.readAsDataURL(file);
+  });
+  imgs.push(base64);
+}
+
+  const isVideo = file.type.startsWith("video");
+
+  media.push({
+    type: isVideo ? "video" : "image",
+    url: base64
+  });
+}
 
   const finalImages = imgs.length ? imgs : oldImages;
 
@@ -227,17 +256,17 @@ document.getElementById("addBtn").onclick = async ()=>{
     if(p) existingLikes = p.likes || 0;
   }
 
-  const data = {
-    title: title.value,
-    desc: desc.value,
-    price: Number(price.value)||0,
-    images: finalImages,
-    inst: inst.value,
-    tg: tg.value,
-    phone: phone.value,
-    email: email.value,
-    likes: existingLikes
-  };
+ const data = {
+  title: title.value,
+  desc: desc.value,
+  price: Number(price.value)||0,
+  media: media, // 👈 ОЦЕ ДОДАЄШ
+  inst: inst.value,
+  tg: tg.value,
+  phone: phone.value,
+  email: email.value,
+  likes: existingLikes
+};
 
   if(editId){
     await updateDoc(doc(db,"posts",editId), data);
@@ -359,7 +388,7 @@ window.deletePost = async (id)=>{
 window.openModalById = (id)=>{
   const p = posts.find(x=>x.id===id);
   if(!p) return;
-  openModal(p.images);
+ openModal(p.media);
 };
 
 function openModal(imgs){
@@ -368,7 +397,35 @@ function openModal(imgs){
   modal.style.display="flex";
   modalImg.src = currentImages[currentIndex];
 }
+function openModal(media){
+  currentMedia = media;
+  currentIndex = 0;
+  zoom = 1;
 
+  modal.style.display="flex";
+  renderMedia();
+}
+
+  function renderMedia(){
+  const img = document.getElementById("modalImg");
+  const video = document.getElementById("modalVideo");
+
+  const item = currentMedia[currentIndex];
+
+  if(item.type === "image"){
+    img.style.display = "block";
+    video.style.display = "none";
+
+    img.src = item.url;
+    img.style.transform = `scale(${zoom})`;
+  } else {
+    img.style.display = "none";
+    video.style.display = "block";
+
+    video.src = item.url;
+  }
+}
+  
 window.nextImg = ()=>{
   currentIndex = (currentIndex + 1) % currentImages.length;
   modalImg.src = currentImages[currentIndex];
@@ -379,10 +436,12 @@ window.prevImg = ()=>{
   modalImg.src = currentImages[currentIndex];
 };
 
-window.closeModal = ()=>{
-  modal.style.display="none";
+window.closeModal = (e)=>{
+  // закриваємо тільки якщо клікнули по фону
+  if(!e || e.target.id === "modal"){
+    modal.style.display="none";
+  }
 };
-
 /* THEME */
 window.toggleTheme = ()=>{
   document.body.classList.toggle("dark");
@@ -390,7 +449,27 @@ window.toggleTheme = ()=>{
 
 /* SEARCH */
 search.oninput = render;
+ window.nextMedia = ()=>{
+  currentIndex = (currentIndex + 1) % currentMedia.length;
+  zoom = 1;
+  renderMedia();
+};
 
+window.prevMedia = ()=>{
+  currentIndex = (currentIndex - 1 + currentMedia.length) % currentMedia.length;
+  zoom = 1;
+  renderMedia();
+};
+
+window.zoomIn = ()=>{
+  zoom += 0.2;
+  renderMedia();
+};
+
+window.zoomOut = ()=>{
+  zoom = Math.max(1, zoom - 0.2);
+  renderMedia();
+};
 </script>
 
 </body>
