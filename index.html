@@ -26,7 +26,6 @@ body {
   color:var(--text);
 }
 
-/* HEADER */
 header {
   padding:12px;
   display:flex;
@@ -35,7 +34,6 @@ header {
   color:white;
 }
 
-/* BUTTONS */
 button {
   padding:6px 10px;
   border:none;
@@ -43,7 +41,6 @@ button {
   cursor:pointer;
 }
 
-/* GRID */
 .grid {
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
@@ -51,7 +48,6 @@ button {
   padding:15px;
 }
 
-/* CARD */
 .card {
   background:var(--card);
   padding:10px;
@@ -66,7 +62,6 @@ button {
   cursor:pointer;
 }
 
-/* ADMIN */
 #adminPanel {
   display:none;
   padding:15px;
@@ -75,7 +70,6 @@ button {
   border-radius:10px;
 }
 
-/* LOGIN */
 #loginBox {
   display:none;
   padding:10px;
@@ -89,10 +83,11 @@ button {
   left:0;
   width:100%;
   height:100%;
-  background:black;
+  background:rgba(0,0,0,0.95);
   justify-content:center;
   align-items:center;
   flex-direction:column;
+  z-index:9999;
 }
 
 #modal img {
@@ -117,14 +112,10 @@ button {
   </div>
 </header>
 
-  <div style="padding:10px;">
-  <input id="search" placeholder="🔍 Пошук товару..." style="
-    width:100%;
-    padding:10px;
-    border-radius:8px;
-    border:none;
-  ">
+<div style="padding:10px;">
+  <input id="search" placeholder="🔍 Пошук товару..." style="width:100%;padding:10px;border-radius:8px;border:none;">
 </div>
+
 <div id="loginBox">
   <input id="login" placeholder="login"><br><br>
   <input id="password" type="password" placeholder="password"><br><br>
@@ -196,7 +187,6 @@ const loginBox = document.getElementById("loginBox");
 const modal = document.getElementById("modal");
 const modalImg = document.getElementById("modalImg");
 
-// 🔍 пошук
 const search = document.getElementById("search");
 
 /* STATE */
@@ -231,6 +221,12 @@ document.getElementById("addBtn").onclick = async ()=>{
 
   const finalImages = imgs.length ? imgs : oldImages;
 
+  let existingLikes = 0;
+  if(editId){
+    const p = posts.find(x=>x.id===editId);
+    if(p) existingLikes = p.likes || 0;
+  }
+
   const data = {
     title: title.value,
     desc: desc.value,
@@ -240,7 +236,7 @@ document.getElementById("addBtn").onclick = async ()=>{
     tg: tg.value,
     phone: phone.value,
     email: email.value,
-    likes: editId ? (posts.find(p=>p.id===editId)?.likes || 0) : 0
+    likes: existingLikes
   };
 
   if(editId){
@@ -261,7 +257,6 @@ function render(){
 
   let filtered = [...posts];
 
-  // 🔍 пошук
   const val = search?.value?.toLowerCase() || "";
   if(val){
     filtered = filtered.filter(p =>
@@ -273,15 +268,13 @@ function render(){
     const div = document.createElement("div");
     div.className = "card";
 
-    // фото
-    if(p.images && p.images.length){
-      const img = document.createElement("img");
-      img.src = p.images[0];
-      img.onclick = () => openModal(p.images);
-      div.appendChild(img);
-    }
+    const imgHTML = p.images && p.images.length
+      ? `<img src="${p.images[0]}" onclick="openModalById('${p.id}')">`
+      : "";
 
-    div.innerHTML += `
+    div.innerHTML = `
+      ${imgHTML}
+
       <h4>${p.title}</h4>
       <p>${p.desc}</p>
       <b>${p.price} грн</b><br><br>
@@ -310,7 +303,7 @@ function render(){
   });
 }
 
-/* ❤️ LIKE */
+/* LIKE */
 window.likePost = async (id)=>{
   const p = posts.find(x=>x.id===id);
   if(!p) return;
@@ -332,6 +325,10 @@ window.loginAdmin = ()=>{
 window.logout = ()=>{
   isAdmin=false;
   adminPanel.style.display="none";
+};
+
+window.showLogin = ()=>{
+  loginBox.style.display="block";
 };
 
 /* EDIT */
@@ -359,12 +356,18 @@ window.deletePost = async (id)=>{
 };
 
 /* MODAL */
-window.openModal = (imgs)=>{
+window.openModalById = (id)=>{
+  const p = posts.find(x=>x.id===id);
+  if(!p) return;
+  openModal(p.images);
+};
+
+function openModal(imgs){
   currentImages = imgs;
   currentIndex = 0;
   modal.style.display="flex";
   modalImg.src = currentImages[currentIndex];
-};
+}
 
 window.nextImg = ()=>{
   currentIndex = (currentIndex + 1) % currentImages.length;
@@ -385,17 +388,8 @@ window.toggleTheme = ()=>{
   document.body.classList.toggle("dark");
 };
 
-/* UI */
-window.showLogin = ()=>{
-  loginBox.style.display="block";
-};
-
-// 🔍 live пошук
-if(search){
-  search.oninput = render;
-}
-
-
+/* SEARCH */
+search.oninput = render;
 
 </script>
 
