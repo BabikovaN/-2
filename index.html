@@ -7,24 +7,23 @@
 
 <style>
 :root {
-  --bg: #f4f6f9;
-  --card: #ffffff;
-  --text: #111;
-  --accent: #4da3ff;
+  --bg:#f4f6f9;
+  --card:#fff;
+  --text:#111;
+  --accent:#4da3ff;
 }
 
 body.dark {
-  --bg: #121212;
-  --card: #1e1e1e;
-  --text: #eee;
-  --accent: #4da3ff;
+  --bg:#121212;
+  --card:#1e1e1e;
+  --text:#eee;
 }
 
 body {
   margin:0;
-  font-family: Arial;
-  background: var(--bg);
-  color: var(--text);
+  font-family:Arial;
+  background:var(--bg);
+  color:var(--text);
 }
 
 /* HEADER */
@@ -32,8 +31,7 @@ header {
   padding:12px;
   display:flex;
   justify-content:space-between;
-  align-items:center;
-  background: var(--accent);
+  background:var(--accent);
   color:white;
 }
 
@@ -43,14 +41,6 @@ button {
   border:none;
   border-radius:6px;
   cursor:pointer;
-  background: white;
-  color:#000;
-  font-weight:bold;
-}
-
-body.dark button {
-  background:#333;
-  color:white;
 }
 
 /* GRID */
@@ -63,10 +53,9 @@ body.dark button {
 
 /* CARD */
 .card {
-  background: var(--card);
+  background:var(--card);
   padding:10px;
   border-radius:12px;
-  box-shadow:0 2px 10px rgba(0,0,0,0.1);
 }
 
 .card img {
@@ -77,21 +66,12 @@ body.dark button {
   cursor:pointer;
 }
 
-.card h4 {
-  margin:8px 0;
-}
-
-.card p {
-  font-size:14px;
-  opacity:0.8;
-}
-
 /* ADMIN */
 #adminPanel {
   display:none;
   padding:15px;
+  background:var(--card);
   margin:10px;
-  background: var(--card);
   border-radius:10px;
 }
 
@@ -112,26 +92,16 @@ body.dark button {
   background:black;
   justify-content:center;
   align-items:center;
+  flex-direction:column;
 }
 
 #modal img {
   max-width:95%;
-  max-height:95%;
+  max-height:80%;
 }
 
-/* INPUTS */
-input, textarea {
-  width:100%;
-  padding:8px;
-  margin:5px 0;
-  border-radius:6px;
-  border:1px solid #ccc;
-}
-
-body.dark input, body.dark textarea {
-  background:#2a2a2a;
-  color:white;
-  border:1px solid #444;
+.modal-controls {
+  margin-top:10px;
 }
 </style>
 </head>
@@ -148,32 +118,37 @@ body.dark input, body.dark textarea {
 </header>
 
 <div id="loginBox">
-  <input id="login" placeholder="login">
-  <input id="password" type="password" placeholder="password">
+  <input id="login" placeholder="login"><br><br>
+  <input id="password" type="password" placeholder="password"><br><br>
   <button onclick="loginAdmin()">Login</button>
 </div>
 
 <div id="adminPanel">
-  <h3>Адмін панель</h3>
+  <h3>Адмінка</h3>
 
-  <input id="title" placeholder="Назва">
-  <input id="price" placeholder="Ціна">
-  <textarea id="desc" placeholder="Опис"></textarea>
+  <input id="title" placeholder="Назва"><br><br>
+  <input id="price" placeholder="Ціна"><br><br>
+  <textarea id="desc" placeholder="Опис"></textarea><br><br>
 
-  <input type="file" id="images" multiple>
+  <input type="file" id="images" multiple><br><br>
 
-  <input id="inst" placeholder="Instagram">
-  <input id="tg" placeholder="Telegram">
-  <input id="phone" placeholder="Phone">
-  <input id="email" placeholder="Email">
+  <input id="inst" placeholder="Instagram"><br>
+  <input id="tg" placeholder="Telegram"><br>
+  <input id="phone" placeholder="Phone"><br>
+  <input id="email" placeholder="Email"><br><br>
 
   <button id="addBtn">Зберегти товар</button>
 </div>
 
 <div id="posts" class="grid"></div>
 
-<div id="modal" onclick="closeModal()">
+<div id="modal">
   <img id="modalImg">
+  <div class="modal-controls">
+    <button onclick="prevImg()">⬅</button>
+    <button onclick="nextImg()">➡</button>
+    <button onclick="closeModal()">✖</button>
+  </div>
 </div>
 
 <script type="module">
@@ -218,6 +193,9 @@ let posts = [];
 let isAdmin = false;
 let editId = null;
 
+let currentImages = [];
+let currentIndex = 0;
+
 /* LOAD */
 onSnapshot(collection(db,"posts"), (snapshot)=>{
   posts = snapshot.docs.map(d=>({id:d.id, ...d.data()}));
@@ -252,7 +230,7 @@ document.getElementById("addBtn").onclick = async ()=>{
 
   if(editId){
     await updateDoc(doc(db,"posts",editId), data);
-    editId=null;
+    editId = null;
   } else {
     await addDoc(collection(db,"posts"), data);
   }
@@ -323,8 +301,22 @@ window.deletePost = async (id)=>{
 
 /* MODAL */
 window.openModal = (imgs)=>{
+  currentImages = imgs;
+  currentIndex = 0;
   modal.style.display="flex";
-  modalImg.src=imgs[0];
+  modalImg.src = currentImages[currentIndex];
+};
+
+window.nextImg = ()=>{
+  if(!currentImages.length) return;
+  currentIndex = (currentIndex + 1) % currentImages.length;
+  modalImg.src = currentImages[currentIndex];
+};
+
+window.prevImg = ()=>{
+  if(!currentImages.length) return;
+  currentIndex = (currentIndex - 1 + currentImages.length) % currentImages.length;
+  modalImg.src = currentImages[currentIndex];
 };
 
 window.closeModal = ()=>{
