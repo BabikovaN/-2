@@ -1,0 +1,21 @@
+rules_version = '2';
+// Правила безпеки для «Пастельні». Замініть email на пошту адміністратора
+// (ту саму, що в js/config.js → ADMIN_EMAILS) і опублікуйте в Firebase Console → Firestore → Rules.
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email in ['owner@example.com'];
+    }
+    // Налаштування, категорії й вироби: читають усі, змінює лише адміністратор
+    match /site/{doc} { allow read: if true; allow write: if isAdmin(); }
+    match /products/{id} { allow read: if true; allow write: if isAdmin(); }
+    // Замовлення: покупець може лише створити (з обмеженням розміру), читає й змінює лише адміністратор
+    match /orders/{id} {
+      allow create: if request.resource.data.keys().hasAll(['name', 'phone', 'type'])
+                    && request.resource.data.name is string && request.resource.data.name.size() < 100
+                    && request.resource.data.phone is string && request.resource.data.phone.size() < 30
+                    && request.resource.data.status == 'new';
+      allow read, update, delete: if isAdmin();
+    }
+  }
+}
