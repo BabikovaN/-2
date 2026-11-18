@@ -45,7 +45,7 @@ function ordersTab(m, orders, v) {
   const draw = () => {
     const list = orders.filter((o) => filter === 'all' || o.status === filter);
     m.innerHTML = m.querySelector('.notice')?.outerHTML || '';
-    m.insertAdjacentHTML('beforeend', `<h1>Замовлення</h1><div class="chips">${[['all', 'Усі'], ...Object.entries(STATUSES)].map(([k, l]) => `<button class="chip ${filter === k ? 'on' : ''}" data-s="${k}">${l} · ${k === 'all' ? orders.length : orders.filter((o) => o.status === k).length}</button>`).join('')}</div>
+    m.insertAdjacentHTML('beforeend', `<h1>Замовлення</h1><div class="chips admin-chips">${[['all', 'Усі'], ...Object.entries(STATUSES)].map(([k, l]) => `<button class="chip ${filter === k ? 'on' : ''}" data-s="${k}">${l} · ${k === 'all' ? orders.length : orders.filter((o) => o.status === k).length}</button>`).join('')}</div>
       ${list.length ? list.map((o) => `<div class="order-card"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><b style="font-family:var(--serif);font-size:24px">${o.type === 'custom' ? 'Індивідуальне' : money(o.total, S.settings.currency)}</b>
         <span class="status ${o.status}">${STATUSES[o.status] || o.status}</span><span class="muted">${new Date(o.created).toLocaleString('uk-UA')}</span><div class="spacer"></div>
         <select class="input" data-st="${o.id}" style="width:auto">${Object.entries(STATUSES).map(([k, l]) => `<option value="${k}" ${o.status === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
@@ -70,7 +70,7 @@ function productsTab(m) {
     $$('[data-ed]', m).forEach((b) => (b.onclick = () => editProduct(S.products.find((p) => p.id === b.dataset.ed), () => productsTab(m))));
     $$('[data-del]', m).forEach((b) => (b.onclick = async () => { const p = S.products.find((x) => x.id === b.dataset.del); if (!confirm(`Видалити «${p.name}»?`)) return; await store.deleteProduct(p.id); await reload(); toast('Видалено'); draw(); }));
   };
-  m.insertAdjacentHTML('beforeend', `<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px"><h1 style="margin:0">Вироби</h1><button class="btn btn-rose" id="addP">+ Додати виріб</button></div>
+  m.insertAdjacentHTML('beforeend', `<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px"><h1 style="margin:0">Вироби</h1><button class="btn btn-dark" id="addP">+ Додати виріб</button></div>
     <input class="input" id="pq" placeholder="Пошук виробу…" style="max-width:360px;margin-bottom:8px"><div id="plist"></div>`);
   $('#pq', m).oninput = (e) => { q = e.target.value.toLowerCase(); draw(); };
   $('#addP', m).onclick = () => editProduct(null, () => productsTab(m.parentElement ? m : m));
@@ -104,6 +104,7 @@ function editProduct(p, done) {
         <div class="f"><span style="display:block;font-weight:600;margin-bottom:6px">Розміри й ціни (${esc(S.settings.currency)})</span><div class="sizes-ed" id="sizes"></div><button type="button" class="btn btn-ghost btn-sm" id="addSize">+ Розмір</button></div>
         <div class="f"><span style="display:block;font-weight:600;margin-bottom:6px">Начинки</span><div class="tagbox" id="fills"></div></div>
         <label class="f"><span>Склад</span><textarea class="input" name="ingredients" rows="2">${esc(p.ingredients)}</textarea></label>
+        <label class="f"><span>Зберігання (необов'язково)</span><input class="input" name="storage" value="${esc(p.storage || '')}" placeholder="Наприклад: до 72 год при +2…+6 °C"></label>
         <div class="f"><span style="display:block;font-weight:600;margin-bottom:6px">Алергени</span><div class="seg">${Object.entries(ALLERGENS).map(([k, l]) => `<label><input type="checkbox" name="al" value="${k}" ${p.allergens.includes(k) ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div></div>
         <div class="f"><span style="display:block;font-weight:600;margin-bottom:6px">Особливості</span><div class="seg">${Object.entries(DIETS).map(([k, l]) => `<label><input type="checkbox" name="diet" value="${k}" ${p.diet.includes(k) ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div></div>
         <div class="f"><span style="display:block;font-weight:600;margin-bottom:6px">Привід</span><div class="seg">${OCCASIONS.map((o) => `<label><input type="checkbox" name="occ" value="${o}" ${p.occasions.includes(o) ? 'checked' : ''}><span>${o}</span></label>`).join('')}</div></div>
@@ -130,7 +131,7 @@ function editProduct(p, done) {
     if (!f.name.value.trim()) return (err.textContent = 'Вкажіть назву');
     const cleanSizes = sizes.filter((s) => s.price > 0);
     if (!cleanSizes.length) return (err.textContent = 'Вкажіть хоча б одну ціну');
-    Object.assign(p, { name: f.name.value.trim(), cat: f.cat.value, sub: f.sub.value, desc: f.desc.value.trim(), ingredients: f.ingredients.value.trim(), sizes: cleanSizes, price: Math.min(...cleanSizes.map((s) => s.price)),
+    Object.assign(p, { name: f.name.value.trim(), cat: f.cat.value, sub: f.sub.value, desc: f.desc.value.trim(), ingredients: f.ingredients.value.trim(), storage: f.storage.value.trim(), sizes: cleanSizes, price: Math.min(...cleanSizes.map((s) => s.price)),
       fillings: fills, allergens: $$('input[name=al]:checked', f).map((x) => x.value), diet: $$('input[name=diet]:checked', f).map((x) => x.value), occasions: $$('input[name=occ]:checked', f).map((x) => x.value),
       badges: [f.hit.checked && 'hit', f.new.checked && 'new'].filter(Boolean), visible: f.visible.checked, inscription: f.inscription.checked });
     try { await store.saveProduct(p); await reload(); toast(isNew ? 'Виріб додано' : 'Збережено'); close(); done(); } catch (x) { err.textContent = x.message; }
